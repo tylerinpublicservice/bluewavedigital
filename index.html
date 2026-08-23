@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BlueWave Digital — Under Development</title>
+  <link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --deep: #04213f;
+      --mid: #0a4a80;
+      --wave: #1e8bd4;
+      --foam: #eaf4fb;
+      --ink: #bcd9ee;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: "Montserrat", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 50% 25%, #0a4a80 0%, #04213f 75%);
+      color: var(--foam);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .content {
+      position: relative;
+      z-index: 3;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: rise 1.1s ease-out both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo {
+      width: min(240px, 60vw);
+      height: auto;
+      margin-bottom: 2rem;
+      filter: drop-shadow(0 8px 26px rgba(0, 0, 0, 0.4));
+    }
+
+    h1 {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 700;
+      font-size: clamp(2.2rem, 8vw, 4.6rem);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      line-height: 1.05;
+    }
+
+    .brand {
+      font-family: "Great Vibes", cursive;
+      font-weight: 400;
+      font-size: clamp(1.8rem, 6vw, 3.4rem);
+      color: var(--wave);
+      margin-top: 0.4rem;
+      text-shadow: 0 2px 18px rgba(30, 139, 212, 0.45);
+    }
+
+    /* Realistic layered waves */
+    .waves {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 42vh;
+      min-height: 240px;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .waves svg {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 220%;
+      height: 100%;
+    }
+
+    .wave-a { animation: drift 18s ease-in-out infinite alternate; opacity: 0.28; }
+    .wave-b { animation: drift 13s ease-in-out infinite alternate-reverse; opacity: 0.42; }
+    .wave-c { animation: drift 9s ease-in-out infinite alternate; opacity: 0.62; }
+    .wave-d { animation: drift 6s ease-in-out infinite alternate-reverse; opacity: 1; }
+
+    @keyframes drift {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-18%); }
+    }
+
+    footer {
+      position: relative;
+      z-index: 3;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.02em;
+      color: rgba(188, 217, 238, 0.75);
+      margin-top: auto;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .content { animation: none; }
+      .wave-a, .wave-b, .wave-c, .wave-d { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="content">
+    <img class="logo" src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png" alt="BlueWave Digital logo" />
+    <h1>Website Under Development</h1>
+    <div class="brand">BlueWave Digital</div>
+  </main>
+
+  <div class="waves" aria-hidden="true">
+    <svg class="wave-a" viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#3aa3e0" d="M0,160 C180,110 320,210 520,180 C760,145 900,235 1140,190 C1300,160 1380,180 1440,170 L1440,320 L0,320 Z"/>
+    </svg>
+    <svg class="wave-b" viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#1e8bd4" d="M0,190 C200,140 360,240 560,205 C820,165 960,255 1200,215 C1330,193 1390,205 1440,198 L1440,320 L0,320 Z"/>
+    </svg>
+    <svg class="wave-c" viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#0a4a80" d="M0,225 C220,180 380,265 600,235 C840,203 980,278 1220,245 C1340,228 1400,238 1440,232 L1440,320 L0,320 Z"/>
+    </svg>
+    <svg class="wave-d" viewBox="0 0 1440 320" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <path fill="#04213f" d="M0,260 C240,225 400,290 640,268 C880,246 1020,298 1260,275 C1360,265 1410,272 1440,268 L1440,320 L0,320 Z"/>
+    </svg>
+  </div>
+
+  <footer>
+    &copy; <span id="year"></span> BlueWave Digital. All rights reserved.
+  </footer>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
