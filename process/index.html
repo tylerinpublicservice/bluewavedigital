@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Our Process - BlueWave Digital</title>
+<meta name="description" content="How BlueWave takes your project from idea to launch and beyond."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">Our process</div>
+<h1>From idea to launch, without the guesswork</h1>
+<p>A clear, seven-stage process so you always know exactly what happens next.</p></div></section>
+<section class="block"><div class="wrap"><div id="steps"></div></div></section>
+<section class="final"><div class="wrap reveal"><h2>Ready to begin?</h2><p>It all starts with a conversation.</p><a class="btn btn-primary" href="/quote/">Start a Project</a></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+db.from('process_steps').select('*').order('sort_order').then(({data})=>{
+if(!data)return;document.getElementById('steps').innerHTML=data.map((s,i)=>`<div class="card reveal" style="display:flex;gap:1.3rem;align-items:flex-start;margin-bottom:1rem"><div class="no" style="margin:0">${String(i+1).padStart(2,'0')}</div><div><h3>${esc(s.title)}</h3><p>${esc(s.description||'')}</p></div></div>`).join('');mountReveal();});
+</script>
+</body>
+</html>

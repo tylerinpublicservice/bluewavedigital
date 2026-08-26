@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Files - BlueWave Portal</title>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/></head><body>
+<div class="dash">
+<aside class="dash-side">
+<a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
+<a href="/portal/" class="">Dashboard</a><a href="/portal/projects/" class="">Projects</a><a href="/portal/invoices/" class="">Invoices</a><a href="/portal/files/" class="active">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="">Support</a>
+<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
+</aside>
+<main class="dash-main">
+<div class="dash-top"><h1>Files</h1><div id="who" class="note"></div></div>
+<div id="content"></div>
+</main></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+(async()=>{const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
+const cid=P.client_id;const files=(await db.from('files').select('*').eq('client_id',cid).order('created_at',{ascending:false})).data||[];
+document.getElementById('content').innerHTML=`<div class="panel"><h3>Project files</h3>
+${files.length?files.map(f=>`<div style="display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--card-line)"><span>${esc(f.name)} <span class="note">(${esc(f.direction)})</span></span><a class="btn btn-ghost btn-sm" href="${esc(f.url)}" target="_blank">Open</a></div>`).join(''):'<p class="muted">No files shared yet. BlueWave will add deliverables here as your project progresses.</p>'}</div>`;
+})();
+</script></body></html>

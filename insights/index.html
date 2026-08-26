@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Insights - BlueWave Digital</title>
+<meta name="description" content="Articles on websites, business, SEO, AI and digital growth from BlueWave Digital."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">Insights</div>
+<h1>Ideas, guides and updates</h1>
+<p>Practical thinking on websites, business and getting the most out of being online.</p></div></section>
+<section class="block"><div class="wrap"><div class="grid g3" id="posts"></div>
+<div id="empty" class="center muted" style="display:none;padding:3rem 0">Articles are on the way. Check back soon.</div></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+db.from('insights').select('*').eq('published',true).order('published_at',{ascending:false}).then(({data})=>{
+const el=document.getElementById('posts');
+if(!data||!data.length){document.getElementById('empty').style.display='block';return;}
+el.innerHTML=data.map(p=>`<a class="card reveal" href="/insights/article/?slug=${encodeURIComponent(p.slug)}">${p.cover_image_url?`<img src="${esc(p.cover_image_url)}" style="width:100%;border-radius:10px;margin-bottom:1rem"/>`:''}<h3>${esc(p.title)}</h3><p>${esc(p.excerpt||'')}</p></a>`).join('');mountReveal();});
+</script>
+</body>
+</html>

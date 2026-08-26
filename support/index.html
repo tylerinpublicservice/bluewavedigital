@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Support - BlueWave Digital</title>
+<meta name="description" content="Existing clients can report an issue or request a change."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">Support</div>
+<h1>Client support</h1>
+<p>Already a BlueWave client? Log in to raise and track support requests, or send us a quick message below.</p>
+<div style="margin-top:1.5rem"><a class="btn btn-primary" href="/login/">Client Login</a></div></div></section>
+<section class="block"><div class="wrap">
+<div class="form-box reveal"><h3 style="margin-bottom:1rem;text-align:center">Quick support message</h3>
+<div id="msg"></div>
+<div class="field"><label>Name</label><input id="s-name"/></div>
+<div class="field"><label>Email</label><input id="s-email" type="email"/></div>
+<div class="field"><label>What do you need help with?</label><textarea id="s-message" placeholder="Describe the issue or change"></textarea></div>
+<button class="btn btn-primary btn-block" id="s-send">Send request</button>
+</div></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+document.getElementById('s-send').onclick=async()=>{
+  const name=document.getElementById('s-name').value.trim();
+  const email=document.getElementById('s-email').value.trim();
+  const message=document.getElementById('s-message').value.trim();
+  const msg=document.getElementById('msg');
+  if(!name||!email||!message){msg.innerHTML='<div class="alert alert-bad">Please complete all fields.</div>';return;}
+  const{error}=await db.from('contact_messages').insert({name,email,message:'[SUPPORT] '+message});
+  if(error){msg.innerHTML='<div class="alert alert-bad">Something went wrong. Please email hello@bluewaveagency.online.</div>';return;}
+  location.href='/thank-you/';
+};
+</script>
+</body>
+</html>

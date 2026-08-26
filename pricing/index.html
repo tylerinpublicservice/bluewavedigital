@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pricing - BlueWave Digital</title>
+<meta name="description" content="Transparent starting prices for websites in Seychelles rupees, USD, EUR and GBP."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">Pricing</div>
+<h1>Transparent starting prices</h1>
+<p>Every project is different, so these are starting points. Final quotes always depend on scope and requirements.</p></div></section>
+<section class="block"><div class="wrap center">
+<div class="cur-switch reveal" id="cur"></div>
+<div class="grid g4" id="pkgs" style="text-align:left"></div>
+<div class="reveal" style="margin-top:1.5rem"><p class="note">Prices convert from Seychelles Rupees at indicative rates. International clients are quoted in their currency.</p></div>
+</div></section>
+<section class="block" style="background:#062a4f"><div class="wrap">
+<div class="sec-head reveal"><div class="eyebrow">Compare</div><h2>What's included</h2></div>
+<div class="table-wrap reveal"><table class="data" id="compare"></table></div></div></section>
+<section class="block"><div class="wrap center reveal"><p class="muted" style="max-width:40rem;margin:0 auto 1.5rem">Every project is different. Final quotations are based on scope and requirements.</p>
+<a class="btn btn-primary" href="/quote/">Get a Custom Quote</a></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+let PKGS=[],cur='SCR';
+function drawSwitch(){document.getElementById('cur').innerHTML=Object.keys(RATES).map(c=>`<button class="${c===cur?'on':''}" onclick="setC('${c}')">${c}</button>`).join('');}
+window.setC=c=>{cur=c;drawSwitch();drawCards();};
+function drawCards(){document.getElementById('pkgs').innerHTML=PKGS.map(p=>`<div class="price-card ${p.highlight?'hot':''}">${p.highlight?'<div class="tag">Most popular</div>':'<div class="tag">Package</div>'}<h3>${esc(p.name)}</h3><div class="amt">${p.price_from?convert(p.price_from,cur):'Custom'}<small>${p.price_from?'starting from':'quoted to scope'}</small></div><p class="desc">${esc(p.blurb||'')}</p><a class="btn btn-ghost btn-sm" href="/quote/">Get a quote</a></div>`).join('');}
+async function loadPricing(){
+  PKGS=(await db.from('packages').select('*').eq('published',true).order('sort_order')).data||[];
+  drawSwitch();drawCards();
+  const feats=(await db.from('package_features').select('*').order('sort_order')).data||[];
+  if(feats.length){
+    const labels=[...new Set(feats.map(f=>f.label))];
+    let head='<thead><tr><th>Feature</th>'+PKGS.map(p=>`<th>${esc(p.name)}</th>`).join('')+'</tr></thead>';
+    let rows=labels.map(l=>{
+      let tds=PKGS.map(p=>{const f=feats.find(x=>x.package_id===p.id&&x.label===l);return `<td>${f?(f.value?esc(f.value):(f.included?'&#10003;':'&#8211;')):'&#8211;'}</td>`;}).join('');
+      return `<tr><td>${esc(l)}</td>${tds}</tr>`;
+    }).join('');
+    document.getElementById('compare').innerHTML=head+'<tbody>'+rows+'</tbody>';
+  } else {
+    document.getElementById('compare').closest('.block').style.display='none';
+  }
+}
+loadPricing();
+</script>
+</body></html>

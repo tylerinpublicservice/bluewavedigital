@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Projects - BlueWave Admin</title>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/></head><body>
+<div class="dash">
+<aside class="dash-side">
+<a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
+<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="active">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a>
+<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
+</aside>
+<main class="dash-main">
+<div class="dash-top"><h1>Projects</h1><div id="who" class="note"></div></div>
+<div id="content"></div>
+</main></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+(async()=>{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+async function load(){
+const cl=(await db.from('clients').select('id,name')).data||[];
+const pr=(await db.from('projects').select('*').order('created_at',{ascending:false})).data||[];
+const nm=id=>{const c=cl.find(x=>x.id===id);return c?c.name:'-';};
+document.getElementById('content').innerHTML=`
+<div class="panel"><h3>New project</h3>
+<div class="field"><label>Client</label><select id="pc">${cl.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div>
+<div class="field"><label>Project name</label><input id="pn"></div>
+<button class="btn btn-primary" id="add">Create project</button></div>
+<div class="panel"><h3>Projects (${pr.length})</h3>${pr.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Project</th><th>Client</th><th>Status</th><th>Progress</th></tr></thead><tbody>${pr.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(nm(p.client_id))}</td><td>${esc(p.status)}</td><td>${p.progress||0}%</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No projects.</p>'}</div>`;
+document.getElementById('add').onclick=async()=>{const name=document.getElementById('pn').value.trim();const client_id=document.getElementById('pc').value;if(!name||!client_id)return;await db.from('projects').insert({name,client_id});load();};
+}
+load();
+})();
+</script></body></html>

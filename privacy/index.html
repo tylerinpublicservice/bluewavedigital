@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Privacy Policy - BlueWave Digital</title>
+<meta name="description" content="Privacy policy for BlueWave Digital."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">Legal</div><h1>Privacy Policy</h1></div></section>
+<section class="block"><div class="wrap" style="max-width:760px"><div id="body" class="muted reveal">
+<p style="margin-bottom:1rem">This page describes how BlueWave Digital collects and uses information. Replace this placeholder text with your finalised privacy policy from the staff dashboard (Pages &rarr; privacy).</p>
+<p style="margin-bottom:1rem">We collect only the information you provide through our forms (such as your name, email and project details) and use it solely to respond to your enquiry and deliver our services. We do not sell your data.</p>
+<p>For any privacy questions, contact hello@bluewaveagency.online.</p>
+</div></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+db.from('pages').select('body').eq('slug','privacy').single().then(({data})=>{if(data&&data.body)document.getElementById('body').innerHTML=data.body;});
+</script>
+</body>
+</html>

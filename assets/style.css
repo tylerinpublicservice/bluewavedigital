@@ -1,0 +1,170 @@
+/* ============================================================
+   BlueWave Digital - shared design system
+   Edit here to change styling across the whole website.
+   ============================================================ */
+:root{
+  --deep:#04213f; --deep2:#062a4f; --mid:#0a4a80; --wave:#1e8bd4; --bright:#3aa3e0;
+  --foam:#eaf4fb; --ink:#bcd9ee; --ink-dim:#8fb4d0;
+  --card:rgba(255,255,255,.045); --card-line:rgba(174,214,244,.14);
+  --max:1180px; --ok:#3ad29a; --warn:#f0b34a; --bad:#f0736a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:"Inter",system-ui,-apple-system,sans-serif;background:var(--deep);color:var(--foam);line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{max-width:100%}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 1.5rem}
+h1,h2,h3,h4,h5{font-family:"Montserrat",sans-serif;line-height:1.14}
+.eyebrow{font-family:"Montserrat";font-weight:600;font-size:.72rem;letter-spacing:.24em;text-transform:uppercase;color:var(--bright)}
+.muted{color:var(--ink-dim)}
+.center{text-align:center}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:.5rem;font-family:"Montserrat";font-weight:600;font-size:.92rem;
+  padding:.85rem 1.5rem;border-radius:999px;cursor:pointer;border:1px solid transparent;transition:transform .18s,box-shadow .18s,background .18s,border-color .18s}
+.btn-primary{background:linear-gradient(135deg,var(--bright),var(--wave));color:#fff;box-shadow:0 8px 24px rgba(30,139,212,.35)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(30,139,212,.5)}
+.btn-ghost{background:transparent;border-color:rgba(255,255,255,.4);color:#fff}
+.btn-ghost:hover{border-color:#fff;transform:translateY(-2px);background:rgba(255,255,255,.06)}
+.btn-sm{padding:.6rem 1.1rem;font-size:.85rem}
+.btn-block{width:100%;justify-content:center}
+
+/* loader */
+#loader{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 40%,#0a4a80,#04213f 70%);transition:opacity .7s,visibility .7s}
+#loader.hidden{opacity:0;visibility:hidden}
+.loader-badge{position:relative;width:120px;height:120px;display:grid;place-items:center;margin-bottom:1.4rem}
+.loader-badge img{width:66px;z-index:3;animation:bob 2.4s ease-in-out infinite}
+.ripple{position:absolute;inset:0;margin:auto;width:120px;height:120px;border-radius:50%;border:2px solid rgba(58,163,224,.5);animation:ripple 2.2s ease-out infinite}
+.ripple:nth-child(2){animation-delay:.7s}.ripple:nth-child(3){animation-delay:1.4s}
+.loader-word{font-family:"Great Vibes",cursive;font-size:2rem;color:var(--bright);text-shadow:0 3px 20px rgba(58,163,224,.5)}
+.loader-waves{position:absolute;bottom:0;left:0;width:100%;height:140px;overflow:hidden}
+.loader-waves svg{position:absolute;bottom:0;left:0;width:220%;height:100%}
+.lw1{animation:drift 6s linear infinite;opacity:.4}.lw2{animation:drift 4s linear infinite reverse;opacity:.7}
+@keyframes ripple{0%{transform:scale(.4);opacity:1}100%{transform:scale(1.6);opacity:0}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes drift{from{transform:translateX(0)}to{transform:translateX(-18%)}}
+
+/* nav */
+header.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(4,33,63,.82);border-bottom:1px solid rgba(174,214,244,.08)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:66px}
+.brand{display:flex;align-items:center;gap:.6rem;font-family:"Montserrat";font-weight:700}
+.brand img{height:32px}.brand span{font-size:1rem}
+nav.links{display:flex;align-items:center;gap:1.8rem}
+nav.links a{font-size:.9rem;color:var(--ink);font-weight:500;transition:color .15s;position:relative}
+nav.links a::after{content:"";position:absolute;left:0;bottom:-6px;width:0;height:2px;background:var(--bright);transition:width .2s}
+nav.links a:hover{color:#fff}nav.links a:hover::after{width:100%}
+.nav-cta{display:flex;align-items:center;gap:.8rem}
+.menu-btn{display:none;background:none;border:0;color:var(--foam);cursor:pointer;font-size:1.5rem}
+#mnav{display:none;padding:0 1.5rem 1rem}
+#mnav a{display:block;padding:.5rem 0;color:var(--ink)}
+@media(max-width:940px){nav.links{display:none}.nav-cta .btn-ghost{display:none}.menu-btn{display:block}}
+
+/* page header (inner pages) */
+.page-head{padding:4rem 0 3rem;text-align:center;background:linear-gradient(180deg,var(--deep2),var(--deep));position:relative}
+.page-head h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;margin:.6rem 0 .8rem}
+.page-head p{color:var(--ink-dim);max-width:40rem;margin:0 auto;font-size:1.05rem}
+
+/* wave divider */
+.wave-divider{display:block;width:100%;height:60px;line-height:0;overflow:hidden}
+.wave-divider svg{width:220%;height:100%;animation:drift 12s ease-in-out infinite alternate}
+
+/* sections */
+section.block{padding:4.5rem 0;position:relative}
+.sec-head{max-width:46rem;margin:0 auto 3rem;text-align:center}
+.sec-head h2{font-size:clamp(1.7rem,4vw,2.5rem);font-weight:700;margin:.6rem 0 .7rem}
+.sec-head p{color:var(--ink-dim)}
+.center-link{text-align:center;margin-top:2.5rem}
+
+/* grids + cards */
+.grid{display:grid;gap:1.1rem}
+.g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:900px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--card-line);border-radius:18px;padding:1.6rem;transition:transform .25s,border-color .25s,background .25s}
+.card:hover{transform:translateY(-5px);border-color:rgba(58,163,224,.5);background:rgba(255,255,255,.06)}
+.card h3{font-size:1.08rem;font-weight:700;margin-bottom:.4rem}
+.card p{color:var(--ink-dim);font-size:.92rem}
+.card .no{font-family:"Montserrat";font-weight:800;font-size:1.4rem;color:rgba(58,163,224,.55);margin-bottom:.5rem}
+
+/* forms */
+.field{margin-bottom:1.1rem;text-align:left}
+.field label{display:block;font-size:.85rem;font-weight:600;margin-bottom:.4rem;color:var(--foam)}
+.field input,.field textarea,.field select{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--card-line);
+  border-radius:12px;padding:.8rem 1rem;color:var(--foam);font-family:inherit;font-size:.95rem;transition:border-color .18s}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--bright)}
+.field textarea{min-height:120px;resize:vertical}
+.field input::placeholder,.field textarea::placeholder{color:var(--ink-dim)}
+.chips{display:flex;flex-wrap:wrap;gap:.6rem}
+.chip{padding:.55rem 1rem;border-radius:999px;border:1px solid var(--card-line);background:rgba(255,255,255,.04);
+  cursor:pointer;font-size:.85rem;font-weight:600;transition:all .15s;user-select:none}
+.chip.on{background:linear-gradient(135deg,var(--bright),var(--wave));border-color:transparent;color:#fff}
+.form-box{max-width:640px;margin:0 auto;background:var(--card);border:1px solid var(--card-line);border-radius:20px;padding:2rem}
+.note{font-size:.85rem;color:var(--ink-dim)}
+.alert{padding:.9rem 1.1rem;border-radius:12px;font-size:.9rem;margin-bottom:1rem}
+.alert-ok{background:rgba(58,210,154,.12);border:1px solid rgba(58,210,154,.4);color:#bff3df}
+.alert-bad{background:rgba(240,115,106,.12);border:1px solid rgba(240,115,106,.4);color:#ffd4d0}
+
+/* tables */
+.table-wrap{overflow-x:auto;border:1px solid var(--card-line);border-radius:14px}
+table.data{width:100%;border-collapse:collapse;font-size:.9rem;min-width:560px}
+table.data th{text-align:left;padding:.85rem 1rem;background:rgba(255,255,255,.04);font-family:"Montserrat";font-weight:600;font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink)}
+table.data td{padding:.85rem 1rem;border-top:1px solid var(--card-line);color:var(--foam)}
+table.data tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-block;padding:.2rem .6rem;border-radius:999px;font-size:.72rem;font-weight:600}
+.badge-new{background:rgba(58,163,224,.2);color:#bfe3fb}
+.badge-ok{background:rgba(58,210,154,.18);color:#bff3df}
+.badge-warn{background:rgba(240,179,74,.18);color:#ffe6b8}
+.badge-bad{background:rgba(240,115,106,.18);color:#ffd4d0}
+
+/* pricing / care */
+.cur-switch{display:inline-flex;gap:.3rem;background:rgba(255,255,255,.05);border:1px solid var(--card-line);border-radius:999px;padding:.3rem;margin:0 auto 2rem;flex-wrap:wrap;justify-content:center}
+.cur-switch button{font-family:"Montserrat";font-weight:600;font-size:.82rem;color:var(--ink);background:transparent;border:0;border-radius:999px;padding:.45rem .9rem;cursor:pointer;transition:all .18s}
+.cur-switch button.on{background:linear-gradient(135deg,var(--bright),var(--wave));color:#fff}
+.price-card{background:var(--card);border:1px solid var(--card-line);border-radius:20px;padding:1.9rem 1.6rem;display:flex;flex-direction:column;transition:transform .25s,border-color .25s}
+.price-card:hover{transform:translateY(-6px);border-color:rgba(58,163,224,.5)}
+.price-card.hot{border-color:var(--bright);background:linear-gradient(180deg,rgba(58,163,224,.12),rgba(255,255,255,.03))}
+.price-card .tag{font-family:"Montserrat";font-weight:600;font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:var(--bright);margin-bottom:.9rem}
+.price-card h3{font-size:1.2rem;font-weight:700;margin-bottom:.5rem}
+.price-card .amt{font-family:"Montserrat";font-weight:800;font-size:1.55rem;color:#fff;margin-bottom:.2rem}
+.price-card .amt small{font-family:"Inter";font-weight:400;font-size:.78rem;color:var(--ink-dim);display:block;margin-bottom:.9rem}
+.price-card p.desc{color:var(--ink-dim);font-size:.88rem;margin-bottom:1.4rem;flex:1}
+
+/* final cta */
+.final{position:relative;text-align:center;padding:5rem 0;overflow:hidden;background:radial-gradient(circle at 50% 120%,#0c5490,#062a4f)}
+.final h2{font-size:clamp(2rem,5vw,3rem);font-weight:800;margin-bottom:1rem}
+.final p{color:var(--ink);max-width:34rem;margin:0 auto 2rem}
+
+/* footer */
+footer.site{background:#031a33;padding:3.5rem 0 2rem;border-top:1px solid rgba(174,214,244,.08)}
+.foot-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:2rem;margin-bottom:2.5rem}
+@media(max-width:760px){.foot-grid{grid-template-columns:1fr 1fr}}
+.foot-grid h5{font-family:"Montserrat";font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--bright);margin-bottom:1rem}
+.foot-grid a{display:block;color:var(--ink-dim);font-size:.9rem;margin-bottom:.55rem;transition:color .15s}
+.foot-grid a:hover{color:#fff}
+.foot-brand img{height:40px;margin-bottom:1rem}
+.foot-brand p{color:var(--ink-dim);font-size:.88rem;max-width:20rem}
+.foot-bottom{border-top:1px solid rgba(174,214,244,.08);padding-top:1.5rem;text-align:center;font-size:.82rem;color:var(--ink-dim)}
+
+/* dashboard layout */
+.dash{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+.dash-side{background:#031a33;border-right:1px solid var(--card-line);padding:1.3rem;position:sticky;top:0;height:100vh;overflow:auto}
+.dash-side .brand{margin-bottom:1.6rem}
+.dash-side a{display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;border-radius:10px;color:var(--ink);font-size:.9rem;margin-bottom:.2rem;transition:background .15s,color .15s}
+.dash-side a:hover,.dash-side a.active{background:rgba(58,163,224,.15);color:#fff}
+.dash-main{padding:1.8rem}
+.dash-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.8rem;flex-wrap:wrap;gap:1rem}
+.dash-top h1{font-size:1.5rem;font-weight:700}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
+@media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--card-line);border-radius:16px;padding:1.3rem}
+.stat .n{font-family:"Montserrat";font-weight:800;font-size:1.8rem;color:#fff}
+.stat .l{font-size:.8rem;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em}
+.panel{background:var(--card);border:1px solid var(--card-line);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem}
+.panel h3{font-size:1.05rem;margin-bottom:1rem}
+@media(max-width:820px){.dash{grid-template-columns:1fr}.dash-side{position:static;height:auto;display:flex;flex-wrap:wrap;gap:.4rem}.dash-side a{margin:0}}
+
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s,transform .7s}
+.reveal.in{opacity:1;transform:none}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto}.reveal{opacity:1;transform:none}}

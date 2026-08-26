@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Clients - BlueWave Admin</title>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/></head><body>
+<div class="dash">
+<aside class="dash-side">
+<a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
+<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="active">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a>
+<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
+</aside>
+<main class="dash-main">
+<div class="dash-top"><h1>Clients</h1><div id="who" class="note"></div></div>
+<div id="content"></div>
+</main></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+(async()=>{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+async function load(){
+const cl=(await db.from('clients').select('*').order('created_at',{ascending:false})).data||[];
+document.getElementById('content').innerHTML=`
+<div class="panel"><h3>Add a client</h3>
+<div class="field"><label>Client / company name</label><input id="cn"></div>
+<div class="field"><label>Email</label><input id="ce" type="email"></div>
+<div class="field"><label>Country</label><input id="cc"></div>
+<button class="btn btn-primary" id="add">Add client</button>
+<p class="note" style="margin-top:.8rem">To give a client portal access, create their login in Supabase &rarr; Authentication, then set their profile role to <b>client</b> and link this client id. (An automated invite button comes with the Edge Function step.)</p></div>
+<div class="panel"><h3>Clients (${cl.length})</h3>${cl.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Name</th><th>Email</th><th>Country</th><th>Status</th><th>ID</th></tr></thead><tbody>${cl.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.email||'')}</td><td>${esc(c.country||'')}</td><td>${esc(c.status)}</td><td class="note">${c.id.slice(0,8)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No clients yet.</p>'}</div>`;
+document.getElementById('add').onclick=async()=>{const name=document.getElementById('cn').value.trim();if(!name)return;await db.from('clients').insert({name,email:document.getElementById('ce').value.trim(),country:document.getElementById('cc').value.trim()});load();};
+}
+load();
+})();
+</script></body></html>

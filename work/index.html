@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Our Work - BlueWave Digital</title>
+<meta name="description" content="A selection of websites and projects by BlueWave Digital."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">Our work</div>
+<h1>Projects we're proud of</h1>
+<p>A growing portfolio of websites built for businesses in Seychelles and beyond.</p></div></section>
+<section class="block"><div class="wrap">
+<div class="chips reveal" id="filters" style="justify-content:center;margin-bottom:2rem"></div>
+<div class="grid g3" id="projects"></div>
+<div id="empty" class="center muted" style="display:none;padding:3rem 0">Our portfolio is being added. Check back soon, or <a href="/quote/" style="color:var(--bright)">start your own project</a>.</div>
+</div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+let ALL=[];
+async function loadWork(){
+  const cats=(await db.from('portfolio_categories').select('*').order('sort_order')).data||[];
+  ALL=(await db.from('portfolio_projects').select('*').eq('published',true).order('sort_order')).data||[];
+  const f=document.getElementById('filters');
+  f.innerHTML=`<div class="chip on" data-c="all">All</div>`+cats.map(c=>`<div class="chip" data-c="${esc(c.slug)}">${esc(c.name)}</div>`).join('');
+  f.querySelectorAll('.chip').forEach(ch=>ch.onclick=()=>{f.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));ch.classList.add('on');render(ch.dataset.c,cats);});
+  render('all',cats);
+}
+function render(cat,cats){
+  const map={};cats.forEach(c=>map[c.id]=c.slug);
+  const list=ALL.filter(p=>cat==='all'||map[p.category_id]===cat);
+  const el=document.getElementById('projects');
+  document.getElementById('empty').style.display=list.length?'none':'block';
+  el.innerHTML=list.map(p=>`<a class="card reveal" href="/work/case/?slug=${encodeURIComponent(p.slug)}">${p.cover_image_url?`<img src="${esc(p.cover_image_url)}" style="width:100%;border-radius:10px;margin-bottom:1rem"/>`:''}<h3>${esc(p.title)}</h3><p>${esc(p.summary||p.industry||'')}</p></a>`).join('');
+  mountReveal();
+}
+loadWork();
+</script>
+</body>
+</html>

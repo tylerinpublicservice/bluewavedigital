@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Services - BlueWave Digital</title>
+<meta name="description" content="Web design, e-commerce, SEO, maintenance, digital setup and automation."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">Services</div>
+<h1>Everything your business needs online</h1>
+<p>One team for your whole digital presence, from your first website to online stores, SEO, hosting and automation.</p></div></section>
+<section class="block"><div class="wrap"><div class="grid g2" id="svc"></div></div></section>
+<section class="final"><div class="wrap reveal"><h2>Not sure what you need?</h2><p>Tell us about your business and we'll recommend the right approach.</p><a class="btn btn-primary" href="/quote/">Start a Project</a></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+db.from('service_categories').select('*').order('sort_order').then(({data})=>{
+if(!data)return;document.getElementById('svc').innerHTML=data.map((s,i)=>`<div class="card reveal"><div class="no">${String(i+1).padStart(2,'0')}</div><h3>${esc(s.name)}</h3><p>${esc(s.description||'')}</p></div>`).join('');mountReveal();});
+</script>
+</body>
+</html>

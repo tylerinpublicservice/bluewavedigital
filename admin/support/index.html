@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Support - BlueWave Admin</title>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/></head><body>
+<div class="dash">
+<aside class="dash-side">
+<a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
+<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="active">Support</a><a href="/admin/growth/" class="">Growth</a>
+<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
+</aside>
+<main class="dash-main">
+<div class="dash-top"><h1>Support</h1><div id="who" class="note"></div></div>
+<div id="content"></div>
+</main></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+(async()=>{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+async function load(){
+const ts=(await db.from('support_tickets').select('*').order('created_at',{ascending:false})).data||[];
+document.getElementById('content').innerHTML=`<div class="panel"><h3>Support tickets (${ts.length})</h3>${ts.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Subject</th><th>Category</th><th>Status</th><th></th></tr></thead><tbody>${ts.map(t=>`<tr><td>${esc(t.subject)}</td><td>${esc(t.category||'')}</td><td><span class="badge ${t.status==='open'?'badge-warn':'badge-ok'}">${esc(t.status)}</span></td><td>${t.status!=='closed'?`<button class="btn btn-ghost btn-sm" onclick="cl2('${t.id}')">Close</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No tickets.</p>'}</div>`;
+window.cl2=async(id)=>{await db.from('support_tickets').update({status:'closed'}).eq('id',id);load();};
+}
+load();
+})();
+</script></body></html>

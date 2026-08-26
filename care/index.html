@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Care Plans - BlueWave Digital</title>
+<meta name="description" content="Ongoing website care and support plans, priced in SCR, USD, EUR and GBP."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">Care plans</div>
+<h1>We don't disappear after launch</h1>
+<p>Ongoing monitoring, updates and support to keep your website fast, secure and current.</p></div></section>
+<section class="block"><div class="wrap center">
+<div class="cur-switch reveal" id="cur"></div>
+<div class="grid g3" id="plans" style="text-align:left"></div></div></section>
+<section class="final"><div class="wrap reveal"><h2>Protect your website</h2><p>Keep your site healthy with a plan that suits you.</p><a class="btn btn-primary" href="/contact/">Get Started</a></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+let CARE=[],cur='SCR';
+function drawSwitch(){document.getElementById('cur').innerHTML=Object.keys(RATES).map(c=>`<button class="${c===cur?'on':''}" onclick="setC('${c}')">${c}</button>`).join('');}
+window.setC=c=>{cur=c;drawSwitch();drawCards();};
+function drawCards(){document.getElementById('plans').innerHTML=CARE.map(p=>`<div class="price-card"><div class="tag">Care plan</div><h3>${esc(p.name)}</h3><div class="amt">${p.price_from?convert(p.price_from,cur):'Custom'}<small>${p.price_from?'per '+(p.interval||'month'):'quoted to scope'}</small></div><p class="desc">${esc(p.blurb||'')}</p><a class="btn btn-ghost btn-sm" href="/contact/">Choose plan</a></div>`).join('');}
+db.from('care_plans').select('*').eq('published',true).order('sort_order').then(({data})=>{CARE=data||[];drawSwitch();drawCards();});
+</script>
+</body></html>

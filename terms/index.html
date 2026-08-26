@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Terms of Use - BlueWave Digital</title>
+<meta name="description" content="Terms of use for BlueWave Digital."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">Legal</div><h1>Terms of Use</h1></div></section>
+<section class="block"><div class="wrap" style="max-width:760px"><div id="body" class="muted reveal">
+<p style="margin-bottom:1rem">These are placeholder terms of use for BlueWave Digital. Replace this text with your finalised terms from the staff dashboard (Pages &rarr; terms).</p>
+<p>By using this website you agree to use it lawfully and respectfully. All content and branding remain the property of BlueWave Digital.</p>
+</div></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+db.from('pages').select('body').eq('slug','terms').single().then(({data})=>{if(data&&data.body)document.getElementById('body').innerHTML=data.body;});
+</script>
+</body>
+</html>

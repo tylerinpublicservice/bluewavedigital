@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FAQ - BlueWave Digital</title>
+<meta name="description" content="Answers to common questions about pricing, timelines, hosting and support."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head"><div class="wrap reveal"><div class="eyebrow">FAQ</div>
+<h1>Frequently asked questions</h1>
+<p>Everything you might want to know before starting a project.</p></div></section>
+<section class="block"><div class="wrap" style="max-width:760px"><div id="faqs"></div></div></section>
+<section class="final"><div class="wrap reveal"><h2>Still have a question?</h2><p>We're happy to help.</p><a class="btn btn-primary" href="/contact/">Contact Us</a></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+db.from('faqs').select('*').eq('published',true).order('sort_order').then(({data})=>{
+if(!data)return;document.getElementById('faqs').innerHTML=data.map(f=>`<details class="card reveal" style="margin-bottom:.8rem;cursor:pointer"><summary style="font-family:Montserrat;font-weight:600;font-size:1.02rem">${esc(f.question)}</summary><p style="margin-top:.7rem">${esc(f.answer)}</p></details>`).join('');mountReveal();});
+</script>
+</body>
+</html>

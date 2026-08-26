@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Request a Quote - BlueWave Digital</title>
+<meta name="description" content="Tell us about your project and get a clear, honest quote from BlueWave Digital."/>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/>
+</head>
+<body>
+<div id="nav"></div>
+<section class="page-head" style="padding-bottom:2rem"><div class="wrap reveal"><div class="eyebrow">Request a quote</div>
+<h1>Start your project</h1>
+<p>A few quick questions so we can understand what you need and reply with an accurate quote.</p></div></section>
+<section class="block" style="padding-top:2rem"><div class="wrap">
+<div class="form-box reveal" style="max-width:680px">
+<div id="progress" class="note center" style="margin-bottom:1.2rem"></div>
+<div id="msg"></div>
+<form id="qform"></form>
+<div style="display:flex;justify-content:space-between;gap:1rem;margin-top:1.5rem">
+<button class="btn btn-ghost" id="back" style="visibility:hidden">Back</button>
+<button class="btn btn-primary" id="next">Next</button>
+</div></div></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+
+const D={features:[],need:''};
+const steps=[
+ {t:'About you',f:()=>`
+   <div class="field"><label>Name</label><input id="name"></div>
+   <div class="field"><label>Company (optional)</label><input id="company"></div>
+   <div class="field"><label>Email</label><input id="email" type="email"></div>
+   <div class="field"><label>Phone / WhatsApp</label><input id="phone"></div>`},
+ {t:'What do you need?',f:()=>chips('need',['New website','Website redesign','E-commerce','Maintenance','SEO','Technical support','Digital setup','Automation','Other'],false)},
+ {t:'Project information',f:()=>`
+   <div class="field"><label>Tell us about your business</label><textarea id="business_info"></textarea></div>
+   <div class="field"><label>What should the website achieve?</label><textarea id="goals"></textarea></div>
+   <div class="field"><label>Do you have a website already? If so, the URL</label><input id="website_url" placeholder="https://"></div>`},
+ {t:'Features',f:()=>chips('features',['Contact forms','Booking','Payments','E-commerce','Blog','CMS','Gallery','Membership','Multilingual','Other'],true)},
+ {t:'Budget',f:()=>chips('budget',['Under SCR 5,000','SCR 5,000-10,000','SCR 10,000-20,000','SCR 20,000+','Not sure'],false)},
+ {t:'Timeline',f:()=>chips('timeline',['ASAP','2-4 weeks','1-2 months','Flexible'],false)},
+];
+let step=0;
+function chips(key,opts,multi){return `<div class="chips" data-key="${key}" data-multi="${multi}">`+opts.map(o=>`<div class="chip" onclick="pick(this)">${o}</div>`).join('')+`</div>`;}
+window.pick=function(el){const box=el.parentElement,multi=box.dataset.multi==='true';
+  if(multi){el.classList.toggle('on');}else{box.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');}};
+function save(){
+  const q=id=>{const e=document.getElementById(id);return e?e.value.trim():undefined;};
+  ['name','company','email','phone','business_info','goals','website_url'].forEach(k=>{const v=q(k);if(v!==undefined)D[k]=v;});
+  document.querySelectorAll('.chips').forEach(box=>{const key=box.dataset.key,multi=box.dataset.multi==='true';
+    const on=[...box.querySelectorAll('.chip.on')].map(c=>c.textContent);
+    if(multi)D[key]=on; else if(on.length)D[key]=on[0];});
+}
+function render(){
+  document.getElementById('progress').textContent=`Step ${step+1} of ${steps.length} — ${steps[step].t}`;
+  document.getElementById('qform').innerHTML=`<h3 style="margin-bottom:1rem">${steps[step].t}</h3>`+steps[step].f();
+  // restore chip state
+  document.querySelectorAll('.chips').forEach(box=>{const key=box.dataset.key;const val=D[key];
+    box.querySelectorAll('.chip').forEach(c=>{if(Array.isArray(val)){if(val.includes(c.textContent))c.classList.add('on');}else if(val===c.textContent)c.classList.add('on');});});
+  ['name','company','email','phone','business_info','goals','website_url'].forEach(k=>{const e=document.getElementById(k);if(e&&D[k])e.value=D[k];});
+  document.getElementById('back').style.visibility=step===0?'hidden':'visible';
+  document.getElementById('next').textContent=step===steps.length-1?'Submit':'Next';
+}
+document.getElementById('back').onclick=()=>{save();if(step>0){step--;render();}};
+document.getElementById('next').onclick=async()=>{
+  save();
+  if(step===0&&(!D.name||!D.email)){document.getElementById('msg').innerHTML='<div class="alert alert-bad">Please enter your name and email.</div>';return;}
+  document.getElementById('msg').innerHTML='';
+  if(step<steps.length-1){step++;render();return;}
+  const rec={name:D.name,company:D.company,email:D.email,phone:D.phone,need:D.need,business_info:D.business_info,goals:D.goals,has_website:!!D.website_url,website_url:D.website_url,features:D.features||[],budget:D.budget,timeline:D.timeline};
+  const{error}=await db.from('quote_requests').insert(rec);
+  if(error){document.getElementById('msg').innerHTML='<div class="alert alert-bad">Something went wrong. Please email hello@bluewaveagency.online.</div>';return;}
+  location.href='/thank-you/';
+};
+render();
+</script>
+</body></html>
