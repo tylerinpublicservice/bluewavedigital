@@ -5,32 +5,77 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="active">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Clients</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="active">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Clients</h1><div id="who" class="note"></div></div><div id="content"></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+(async()=>{
+const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+
 async function load(){
-const cl=(await db.from('clients').select('*').order('created_at',{ascending:false})).data||[];
-document.getElementById('content').innerHTML=`
-<div class="panel"><h3>Add a client</h3>
-<div class="field"><label>Client / company name</label><input id="cn"></div>
-<div class="field"><label>Email</label><input id="ce" type="email"></div>
-<div class="field"><label>Country</label><input id="cc"></div>
-<button class="btn btn-primary" id="add">Add client</button>
-<p class="note" style="margin-top:.8rem">To give a client portal access, create their login in Supabase &rarr; Authentication, then set their profile role to <b>client</b> and link this client id. (An automated invite button comes with the Edge Function step.)</p></div>
-<div class="panel"><h3>Clients (${cl.length})</h3>${cl.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Name</th><th>Email</th><th>Country</th><th>Status</th><th>ID</th></tr></thead><tbody>${cl.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.email||'')}</td><td>${esc(c.country||'')}</td><td>${esc(c.status)}</td><td class="note">${c.id.slice(0,8)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No clients yet.</p>'}</div>`;
-document.getElementById('add').onclick=async()=>{const name=document.getElementById('cn').value.trim();if(!name)return;await db.from('clients').insert({name,email:document.getElementById('ce').value.trim(),country:document.getElementById('cc').value.trim()});load();};
+  const cl=(await db.from('clients').select('*').order('created_at',{ascending:false})).data||[];
+  const profs=(await db.from('profiles').select('id,client_id,role,full_name')).data||[];
+  const linked=id=>profs.find(p=>p.client_id===id);
+  document.getElementById('content').innerHTML=`
+  <div class="panel"><h3>Invite a new client</h3>
+    <p class="note" style="margin-bottom:1rem">This creates their login, links their account, and emails them a branded invite to set a password. They'll land in their client portal.</p>
+    <div id="imsg"></div>
+    <div class="grid g2">
+      <div class="field"><label>Client / company name</label><input id="cn" placeholder="Acme Ltd"></div>
+      <div class="field"><label>Email</label><input id="ce" type="email" placeholder="client@example.com"></div>
+      <div class="field"><label>Country (optional)</label><input id="cc" placeholder="Seychelles"></div>
+      <div class="field"><label>Phone (optional)</label><input id="cp"></div>
+    </div>
+    <button class="btn btn-primary" id="invite">Create &amp; send invite</button>
+  </div>
+  <div class="panel"><h3>Clients (${cl.length})</h3>
+  ${cl.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Name</th><th>Email</th><th>Country</th><th>Account</th><th></th></tr></thead><tbody>
+  ${cl.map(c=>{const l=linked(c.id);return `<tr>
+    <td>${esc(c.name)}</td><td>${esc(c.email||'')}</td><td>${esc(c.country||'')}</td>
+    <td>${l?'<span class="badge badge-ok">Active login</span>':'<span class="badge badge-warn">No login yet</span>'}</td>
+    <td>${c.email?`<button class="btn btn-ghost btn-sm" onclick="resend('${esc(c.name)}','${esc(c.email)}','${esc(c.country||'')}','${esc(c.phone||'')}')">${l?'Resend invite':'Send invite'}</button>`:''}</td>
+  </tr>`;}).join('')}
+  </tbody></table></div>`:'<p class="muted">No clients yet. Invite your first one above.</p>'}</div>`;
+
+  document.getElementById('invite').onclick=async()=>{
+    const name=document.getElementById('cn').value.trim();
+    const email=document.getElementById('ce').value.trim();
+    const country=document.getElementById('cc').value.trim();
+    const phone=document.getElementById('cp').value.trim();
+    const msg=document.getElementById('imsg');
+    if(!name||!email){msg.innerHTML='<div class="alert alert-bad">Name and email are required.</div>';return;}
+    await doInvite({name,email,country,phone},msg,true);
+  };
 }
+
+window.resend=async(name,email,country,phone)=>{
+  await doInvite({name,email,country,phone,existing:true}, null, false);
+};
+
+async function doInvite(payload,msgEl,reload){
+  const btn=document.getElementById('invite');
+  if(btn){btn.disabled=true;btn.textContent='Sending...';}
+  const { data:{ session } }=await db.auth.getSession();
+  const res=await fetch(`${SUPABASE_URL}/functions/v1/invite-client`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?session.access_token:SUPABASE_KEY)},
+    body:JSON.stringify(payload)
+  });
+  let out={}; try{out=await res.json();}catch(e){}
+  if(btn){btn.disabled=false;btn.textContent='Create & send invite';}
+  if(!res.ok||out.error){
+    const t='Invite failed: '+(out.error||res.status)+'. (Have you deployed the invite-client function and set its secrets?)';
+    if(msgEl)msgEl.innerHTML='<div class="alert alert-bad">'+t+'</div>'; else alert(t);
+    return;
+  }
+  if(msgEl)msgEl.innerHTML='<div class="alert alert-ok">Invite sent. The client will receive an email to set their password.</div>';
+  else alert('Invite re-sent.');
+  if(reload)setTimeout(load,600);
+}
+
 load();
 })();
 </script></body></html>

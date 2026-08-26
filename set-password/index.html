@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Set your password - BlueWave Digital</title>
+<link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="/assets/style.css"/></head><body><div id="nav"></div>
+<section class="page-head" style="min-height:70vh;display:flex;align-items:center"><div class="wrap">
+<div class="form-box reveal" style="max-width:420px">
+<div class="center" style="margin-bottom:1.5rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png" style="height:48px"><h1 style="font-size:1.4rem;margin-top:.8rem">Set your password</h1><p class="note">Choose a password to finish setting up your account.</p></div>
+<div id="msg"></div>
+<div id="form">
+<div class="field"><label>New password</label><input id="pw" type="password" placeholder="At least 8 characters"></div>
+<div class="field"><label>Confirm password</label><input id="pw2" type="password"></div>
+<button class="btn btn-primary btn-block" id="save">Save password</button>
+</div>
+</div></div></section>
+<div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/assets/app.js"></script>
+<script>
+// Supabase puts a recovery/invite session in the URL hash; the client picks it up automatically.
+db.auth.onAuthStateChange((event,session)=>{ /* session established from invite link */ });
+document.getElementById('save').onclick=async()=>{
+  const pw=document.getElementById('pw').value, pw2=document.getElementById('pw2').value;
+  const msg=document.getElementById('msg');
+  if(pw.length<8){msg.innerHTML='<div class="alert alert-bad">Password must be at least 8 characters.</div>';return;}
+  if(pw!==pw2){msg.innerHTML='<div class="alert alert-bad">Passwords do not match.</div>';return;}
+  const {error}=await db.auth.updateUser({password:pw});
+  if(error){msg.innerHTML='<div class="alert alert-bad">'+error.message+'. Your invite link may have expired - ask BlueWave to resend it.</div>';return;}
+  document.getElementById('form').style.display='none';
+  msg.innerHTML='<div class="alert alert-ok">Password set. Redirecting to your dashboard...</div>';
+  setTimeout(async()=>{const p=await currentProfile();location.href=(p&&(p.role==='admin'||p.role==='staff'))?'/admin/':'/portal/';},1500);
+};
+</script></body></html>
