@@ -63,6 +63,31 @@ function mountFooter(){
   const y=document.getElementById('yr');if(y)y.textContent=new Date().getFullYear();
 }
 
+// ---- Site settings (contact email, phone, socials, etc.) ----
+let SETTINGS={};
+async function loadSettings(){
+  try{
+    const {data}=await db.from('site_settings').select('*');
+    if(data)data.forEach(r=>{let v=r.value;SETTINGS[r.key]=(typeof v==='string')?v.replace(/^"|"$/g,''):v;});
+  }catch(e){}
+  window.SETTINGS=SETTINGS;
+  applySettings();
+}
+// Any element with data-setting="key" gets filled from site_settings.
+// Anchors get sensible hrefs (mailto/tel). Empty values hide [data-setting-wrap].
+function applySettings(){
+  document.querySelectorAll('[data-setting]').forEach(el=>{
+    const k=el.dataset.setting;const v=SETTINGS[k];
+    const wrap=el.closest('[data-setting-wrap]');
+    if(v==null||v===''){if(wrap)wrap.style.display='none';return;}
+    if(el.tagName==='A'){
+      if(k==='contact_email'){el.href='mailto:'+v;el.textContent=v;}
+      else if(k==='whatsapp'||k==='contact_phone'){el.href='tel:'+String(v).replace(/\s/g,'');el.textContent=v;}
+      else{el.href=v;el.textContent=v;}
+    }else el.textContent=v;
+  });
+}
+
 // ---- Scroll reveal ----
 function mountReveal(){
   const obs=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting){en.target.classList.add('in');obs.unobserve(en.target)}})},{threshold:.12});
@@ -89,5 +114,5 @@ async function requireRole(role){
 
 // ---- Auto-init on every page ----
 document.addEventListener('DOMContentLoaded',()=>{
-  mountLoader();mountNav();mountFooter();mountReveal();
+  mountLoader();mountNav();mountFooter();mountReveal();loadSettings();
 });

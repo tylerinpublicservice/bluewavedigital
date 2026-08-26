@@ -16,7 +16,13 @@
 <section class="page-head"><div class="wrap reveal"><div class="eyebrow">Contact</div>
 <h1>Let's talk</h1>
 <p>Send us a message and we'll get back to you shortly. Based in Seychelles, working worldwide.</p></div></section>
-<section class="block"><div class="wrap">
+<section class="block">
+<div class="wrap" style="max-width:640px;margin-bottom:1.5rem"><div class="grid g2">
+<div class="card" data-setting-wrap><div class="note">Email</div><a data-setting="contact_email" href="mailto:hello@bluewaveagency.online" style="color:var(--bright);font-weight:600">hello@bluewaveagency.online</a></div>
+<div class="card" data-setting-wrap><div class="note">Phone / WhatsApp</div><a data-setting="whatsapp" href="#" style="color:var(--bright);font-weight:600"></a></div>
+<div class="card" data-setting-wrap><div class="note">Location</div><span data-setting="location">Seychelles</span></div>
+<div class="card" data-setting-wrap><div class="note">Hours</div><span data-setting="business_hours"></span></div>
+</div></div><div class="wrap">
 <div class="form-box reveal">
 <div id="msg"></div>
 <div class="field"><label>Name</label><input id="c-name" placeholder="Your name"/></div>
@@ -24,7 +30,7 @@
 <div class="field"><label>Phone / WhatsApp (optional)</label><input id="c-phone" placeholder="+248 ..."/></div>
 <div class="field"><label>Message</label><textarea id="c-message" placeholder="How can we help?"></textarea></div>
 <button class="btn btn-primary btn-block" id="c-send">Send message</button>
-<p class="note center" style="margin-top:1rem">Prefer email? <a href="mailto:hello@bluewaveagency.online" style="color:var(--bright)">hello@bluewaveagency.online</a></p>
+<p class="note center" style="margin-top:1rem">Prefer email? <a data-setting="contact_email" href="mailto:hello@bluewaveagency.online" style="color:var(--bright)">hello@bluewaveagency.online</a></p>
 </div></div></section>
 <div id="footer"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
