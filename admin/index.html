@@ -5,24 +5,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/admin/" class="active">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Staff Dashboard</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/admin/" class="active">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Staff Dashboard</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+(async()=>{try{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
 const leads=(await db.from('quote_requests').select('id,status')).data||[];
 const clients=(await db.from('clients').select('id')).data||[];
 const projects=(await db.from('projects').select('id,status')).data||[];
-const invoices=(await db.from('invoices').select('total,status,currency')).data||[];
+const invoices=(await db.from('invoices').select('total,status')).data||[];
 const tickets=(await db.from('support_tickets').select('id,status')).data||[];
 const paid=invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+Number(i.total||0),0);
 document.getElementById('content').innerHTML=`
@@ -30,14 +25,12 @@ document.getElementById('content').innerHTML=`
 <div class="stat"><div class="n">${leads.filter(l=>l.status==='new').length}</div><div class="l">New leads</div></div>
 <div class="stat"><div class="n">${clients.length}</div><div class="l">Clients</div></div>
 <div class="stat"><div class="n">${projects.filter(p=>p.status!=='live').length}</div><div class="l">Active projects</div></div>
-<div class="stat"><div class="n">SCR ${paid.toLocaleString('en-US')}</div><div class="l">Collected</div></div>
-</div>
+<div class="stat"><div class="n">SCR ${paid.toLocaleString('en-US')}</div><div class="l">Collected</div></div></div>
 <div class="panel"><h3>Jump to</h3>
 <a class="btn btn-ghost btn-sm" href="/admin/leads/">Leads (${leads.length})</a>
+<a class="btn btn-ghost btn-sm" href="/admin/clients/">Clients &amp; accounts</a>
 <a class="btn btn-ghost btn-sm" href="/admin/content/">Edit content</a>
-<a class="btn btn-ghost btn-sm" href="/admin/clients/">Clients</a>
 <a class="btn btn-ghost btn-sm" href="/admin/invoices/">Invoices</a>
-<a class="btn btn-ghost btn-sm" href="/admin/support/">Support (${tickets.filter(t=>t.status==='open').length} open)</a></div>
-<div class="panel"><h3>About this dashboard</h3><p class="muted">This is your control centre. "Content" lets you edit everything shown on the public website (services, pricing, portfolio, blog, FAQs, testimonials). The other tabs manage the business side: leads, clients, projects, invoices and support.</p></div>`;
-})();
+<a class="btn btn-ghost btn-sm" href="/admin/support/">Support (${tickets.filter(t=>t.status==='open').length} open)</a></div>`;
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
 </script></body></html>

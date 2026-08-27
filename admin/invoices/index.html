@@ -5,40 +5,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="active">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Invoices</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="active">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Invoices</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+(async()=>{try{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
 async function load(){
 const cl=(await db.from('clients').select('id,name')).data||[];
 const inv=(await db.from('invoices').select('*').order('created_at',{ascending:false})).data||[];
 const nm=id=>{const c=cl.find(x=>x.id===id);return c?c.name:'-';};
-document.getElementById('content').innerHTML=`
-<div class="panel"><h3>Create invoice</h3>
-<div class="field"><label>Client</label><select id="ic">${cl.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div>
-<div class="field"><label>Description</label><input id="idesc" placeholder="Website design - deposit"></div>
-<div class="field"><label>Amount (SCR)</label><input id="iamt" type="number"></div>
-<button class="btn btn-primary" id="add">Create invoice</button></div>
-<div class="panel"><h3>Invoices (${inv.length})</h3>${inv.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Number</th><th>Client</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>${inv.map(i=>`<tr><td>${esc(i.number||'-')}</td><td>${esc(nm(i.client_id))}</td><td>${money(i.total,i.currency)}</td><td><span class="badge ${i.status==='paid'?'badge-ok':'badge-warn'}">${esc(i.status)}</span></td><td>${i.status!=='paid'?`<button class="btn btn-ghost btn-sm" onclick="pay('${i.id}')">Mark paid</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No invoices.</p>'}</div>`;
-document.getElementById('add').onclick=async()=>{
-  const client_id=document.getElementById('ic').value;const desc=document.getElementById('idesc').value.trim();const amt=parseFloat(document.getElementById('iamt').value||'0');
-  if(!client_id||!amt)return;
-  const{data:inv2}=await db.from('invoices').insert({client_id,status:'sent',subtotal:amt,total:amt,currency:'SCR'}).select().single();
-  if(inv2)await db.from('invoice_line_items').insert({invoice_id:inv2.id,description:desc||'Services',quantity:1,unit_price:amt,amount:amt});
-  load();
-};
+document.getElementById('content').innerHTML=`<div class="panel"><h3>Create invoice</h3><div class="field"><label>Client</label><select id="ic">${cl.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div><div class="field"><label>Description</label><input id="idesc" placeholder="Website design - deposit"></div><div class="field"><label>Amount (SCR)</label><input id="iamt" type="number"></div><button class="btn btn-primary" id="add">Create invoice</button></div><div class="panel"><h3>Invoices (${inv.length})</h3>${inv.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Number</th><th>Client</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>${inv.map(i=>`<tr><td>${esc(i.number||'-')}</td><td>${esc(nm(i.client_id))}</td><td>${money(i.total,i.currency)}</td><td><span class="badge ${i.status==='paid'?'badge-ok':'badge-warn'}">${esc(i.status)}</span></td><td>${i.status!=='paid'?`<button class="btn btn-ghost btn-sm" onclick="pay('${i.id}')">Mark paid</button>`:''}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No invoices.</p>'}</div>`;
+document.getElementById('add').onclick=async()=>{const client_id=document.getElementById('ic').value;const desc=document.getElementById('idesc').value.trim();const amt=parseFloat(document.getElementById('iamt').value||'0');if(!client_id||!amt)return;const{data:inv2}=await db.from('invoices').insert({client_id,status:'sent',subtotal:amt,total:amt,currency:'SCR'}).select().single();if(inv2)await db.from('invoice_line_items').insert({invoice_id:inv2.id,description:desc||'Services',quantity:1,unit_price:amt,amount:amt});load();};
 window.pay=async(id)=>{await db.from('invoices').update({status:'paid',paid_at:new Date().toISOString()}).eq('id',id);load();};
 }
 load();
-})();
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
 </script></body></html>

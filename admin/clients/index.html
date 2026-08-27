@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Clients - BlueWave Admin</title>
+<title>Clients & Accounts - BlueWave Admin</title>
 <link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
@@ -8,74 +8,63 @@
 <div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
 <a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="active">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
-<main class="dash-main"><div class="dash-top"><h1>Clients</h1><div id="who" class="note"></div></div><div id="content"></div></main></div>
+<main class="dash-main"><div class="dash-top"><h1>Clients & Accounts</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{
-const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
-
+(async()=>{try{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+async function acct(payload){const {data:{session}}=await db.auth.getSession();const res=await fetch(`${SUPABASE_URL}/functions/v1/manage-accounts`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?session.access_token:SUPABASE_KEY)},body:JSON.stringify(payload)});let out={};try{out=await res.json();}catch(e){}if(!res.ok||out.error)throw new Error(out.error||('HTTP '+res.status));return out;}
+let STATUS={}; // email -> state
+async function loadStatus(){
+  try{const out=await acct({action:'status'});(out.users||[]).forEach(u=>{STATUS[(u.email||'').toLowerCase()]=u.state;});}
+  catch(e){/* function not deployed yet */}
+}
+function stBadge(email){
+  const s=STATUS[(email||'').toLowerCase()];
+  if(s==='active')return '<span class="badge badge-ok">Active</span>';
+  if(s==='invited')return '<span class="badge badge-warn">Invited - awaiting password</span>';
+  return '<span class="badge badge-new">No login</span>';
+}
 async function load(){
+  await loadStatus();
   const cl=(await db.from('clients').select('*').order('created_at',{ascending:false})).data||[];
-  const profs=(await db.from('profiles').select('id,client_id,role,full_name')).data||[];
-  const linked=id=>profs.find(p=>p.client_id===id);
   document.getElementById('content').innerHTML=`
   <div class="panel"><h3>Invite a new client</h3>
-    <p class="note" style="margin-bottom:1rem">This creates their login, links their account, and emails them a branded invite to set a password. They'll land in their client portal.</p>
+    <p class="note" style="margin-bottom:1rem">Creates their login, links the account, and emails a branded invite so they set their own password. They land in their portal after.</p>
     <div id="imsg"></div>
     <div class="grid g2">
       <div class="field"><label>Client / company name</label><input id="cn" placeholder="Acme Ltd"></div>
       <div class="field"><label>Email</label><input id="ce" type="email" placeholder="client@example.com"></div>
-      <div class="field"><label>Country (optional)</label><input id="cc" placeholder="Seychelles"></div>
+      <div class="field"><label>Country (optional)</label><input id="cc"></div>
       <div class="field"><label>Phone (optional)</label><input id="cp"></div>
     </div>
     <button class="btn btn-primary" id="invite">Create &amp; send invite</button>
   </div>
-  <div class="panel"><h3>Clients (${cl.length})</h3>
-  ${cl.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Name</th><th>Email</th><th>Country</th><th>Account</th><th></th></tr></thead><tbody>
-  ${cl.map(c=>{const l=linked(c.id);return `<tr>
-    <td>${esc(c.name)}</td><td>${esc(c.email||'')}</td><td>${esc(c.country||'')}</td>
-    <td>${l?'<span class="badge badge-ok">Active login</span>':'<span class="badge badge-warn">No login yet</span>'}</td>
-    <td>${c.email?`<button class="btn btn-ghost btn-sm" onclick="resend('${esc(c.name)}','${esc(c.email)}','${esc(c.country||'')}','${esc(c.phone||'')}')">${l?'Resend invite':'Send invite'}</button>`:''}</td>
-  </tr>`;}).join('')}
+  <div class="panel"><h3>Clients &amp; accounts (${cl.length})</h3>
+  <p class="note" style="margin-bottom:1rem">Manage everything here - no need to open Supabase. Resend fixes "invited but no password". Reset sends a password-reset email.</p>
+  ${cl.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Name</th><th>Email</th><th>Account</th><th>Actions</th></tr></thead><tbody>
+  ${cl.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.email||'')}</td><td>${c.email?stBadge(c.email):'<span class="note">no email</span>'}</td>
+  <td>${c.email?`<button class="btn btn-ghost btn-sm" onclick="act('resend','${esc(c.email)}',this)">Resend invite</button>
+   <button class="btn btn-ghost btn-sm" onclick="act('reset','${esc(c.email)}',this)">Reset password</button>`:''}</td></tr>`).join('')}
   </tbody></table></div>`:'<p class="muted">No clients yet. Invite your first one above.</p>'}</div>`;
 
   document.getElementById('invite').onclick=async()=>{
-    const name=document.getElementById('cn').value.trim();
-    const email=document.getElementById('ce').value.trim();
-    const country=document.getElementById('cc').value.trim();
-    const phone=document.getElementById('cp').value.trim();
+    const name=document.getElementById('cn').value.trim(),email=document.getElementById('ce').value.trim();
+    const country=document.getElementById('cc').value.trim(),phone=document.getElementById('cp').value.trim();
     const msg=document.getElementById('imsg');
     if(!name||!email){msg.innerHTML='<div class="alert alert-bad">Name and email are required.</div>';return;}
-    await doInvite({name,email,country,phone},msg,true);
+    const btn=document.getElementById('invite');btn.disabled=true;btn.textContent='Sending...';
+    try{await acct({action:'invite',name,email,country,phone});msg.innerHTML='<div class="alert alert-ok">Invite sent. The client will receive an email to set their password.</div>';setTimeout(load,700);}
+    catch(e){msg.innerHTML='<div class="alert alert-bad">Failed: '+esc(e.message)+'. (Deploy the manage-accounts function and set its secrets - see SETUP guide.)</div>';}
+    btn.disabled=false;btn.textContent='Create & send invite';
   };
 }
-
-window.resend=async(name,email,country,phone)=>{
-  await doInvite({name,email,country,phone,existing:true}, null, false);
+window.act=async(action,email,btn)=>{
+  const old=btn.textContent;btn.disabled=true;btn.textContent='...';
+  try{await acct({action,email});btn.textContent='Sent';setTimeout(()=>{btn.textContent=old;btn.disabled=false;},1500);}
+  catch(e){alert('Failed: '+e.message+'\n(Is the manage-accounts function deployed with its secrets?)');btn.textContent=old;btn.disabled=false;}
 };
-
-async function doInvite(payload,msgEl,reload){
-  const btn=document.getElementById('invite');
-  if(btn){btn.disabled=true;btn.textContent='Sending...';}
-  const { data:{ session } }=await db.auth.getSession();
-  const res=await fetch(`${SUPABASE_URL}/functions/v1/invite-client`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?session.access_token:SUPABASE_KEY)},
-    body:JSON.stringify(payload)
-  });
-  let out={}; try{out=await res.json();}catch(e){}
-  if(btn){btn.disabled=false;btn.textContent='Create & send invite';}
-  if(!res.ok||out.error){
-    const t='Invite failed: '+(out.error||res.status)+'. (Have you deployed the invite-client function and set its secrets?)';
-    if(msgEl)msgEl.innerHTML='<div class="alert alert-bad">'+t+'</div>'; else alert(t);
-    return;
-  }
-  if(msgEl)msgEl.innerHTML='<div class="alert alert-ok">Invite sent. The client will receive an email to set their password.</div>';
-  else alert('Invite re-sent.');
-  if(reload)setTimeout(load,600);
-}
-
 load();
-})();
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
 </script></body></html>

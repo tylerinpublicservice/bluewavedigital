@@ -5,33 +5,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/portal/" class="">Dashboard</a><a href="/portal/projects/" class="">Projects</a><a href="/portal/invoices/" class="active">Invoices</a><a href="/portal/files/" class="">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="">Support</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Invoices</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/portal/" class="">Dashboard</a><a href="/portal/projects/" class="">Projects</a><a href="/portal/invoices/" class="active">Invoices</a><a href="/portal/files/" class="">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="">Support</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Invoices</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
+(async()=>{try{const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
 const cid=P.client_id;const inv=(await db.from('invoices').select('*').eq('client_id',cid).order('issue_date',{ascending:false})).data||[];
 const badge=s=>s==='paid'?'badge-ok':(s==='overdue'?'badge-bad':'badge-warn');
-document.getElementById('content').innerHTML=`<div class="panel"><h3>Your invoices</h3>
-${inv.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Number</th><th>Issued</th><th>Due</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>
-${inv.map(i=>`<tr><td>${esc(i.number||'-')}</td><td>${i.issue_date||''}</td><td>${i.due_date||''}</td><td>${money(i.total,i.currency)}</td><td><span class="badge ${badge(i.status)}">${esc(i.status)}</span></td><td><button class="btn btn-ghost btn-sm" onclick="dl('${i.id}')">Download</button></td></tr>`).join('')}
-</tbody></table></div>`:'<p class="muted">No invoices yet.</p>'}</div>`;
-window.dl=async(id)=>{
-  const i=inv.find(x=>x.id===id);
-  const items=(await db.from('invoice_line_items').select('*').eq('invoice_id',id).order('sort_order')).data||[];
-  let t=`BLUEWAVE DIGITAL - INVOICE\n${'='.repeat(40)}\nInvoice: ${i.number}\nIssued: ${i.issue_date||''}\nDue: ${i.due_date||''}\nStatus: ${i.status}\n\nITEMS\n${'-'.repeat(40)}\n`;
-  items.forEach(it=>{t+=`${it.description}  x${it.quantity}  ${money(it.amount,i.currency)}\n`;});
-  t+=`${'-'.repeat(40)}\nSubtotal: ${money(i.subtotal,i.currency)}\nTax: ${money(i.tax,i.currency)}\nTOTAL: ${money(i.total,i.currency)}\n\nThank you for your business.\nBlueWave Digital - bluewaveagency.online`;
-  const b=new Blob([t],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(i.number||'invoice')+'.txt';a.click();
-};
-})();
+document.getElementById('content').innerHTML=`<div class="panel"><h3>Your invoices</h3>${inv.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Number</th><th>Issued</th><th>Due</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>${inv.map(i=>`<tr><td>${esc(i.number||'-')}</td><td>${i.issue_date||''}</td><td>${i.due_date||''}</td><td>${money(i.total,i.currency)}</td><td><span class="badge ${badge(i.status)}">${esc(i.status)}</span></td><td><button class="btn btn-ghost btn-sm" onclick="dl('${i.id}')">Download</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No invoices yet.</p>'}</div>`;
+window.dl=async(id)=>{const i=inv.find(x=>x.id===id);const items=(await db.from('invoice_line_items').select('*').eq('invoice_id',id).order('sort_order')).data||[];
+let t=`BLUEWAVE DIGITAL - INVOICE\n${'='.repeat(40)}\nInvoice: ${i.number}\nIssued: ${i.issue_date||''}\nDue: ${i.due_date||''}\nStatus: ${i.status}\n\nITEMS\n${'-'.repeat(40)}\n`;
+items.forEach(it=>{t+=`${it.description}  x${it.quantity}  ${money(it.amount,i.currency)}\n`;});
+t+=`${'-'.repeat(40)}\nSubtotal: ${money(i.subtotal,i.currency)}\nTax: ${money(i.tax,i.currency)}\nTOTAL: ${money(i.total,i.currency)}\n\nThank you for your business.\nBlueWave Digital - bluewaveagency.online`;
+const b=new Blob([t],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(i.number||'invoice')+'.txt';a.click();};
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
 </script></body></html>

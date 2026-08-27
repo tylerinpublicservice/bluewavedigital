@@ -5,29 +5,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/portal/" class="">Dashboard</a><a href="/portal/projects/" class="active">Projects</a><a href="/portal/invoices/" class="">Invoices</a><a href="/portal/files/" class="">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="">Support</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Projects</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/portal/" class="">Dashboard</a><a href="/portal/projects/" class="active">Projects</a><a href="/portal/invoices/" class="">Invoices</a><a href="/portal/files/" class="">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="">Support</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Projects</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
+(async()=>{try{const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
 const cid=P.client_id;const projects=(await db.from('projects').select('*').eq('client_id',cid).order('created_at')).data||[];
 let html='';
 for(const p of projects){
   const ms=(await db.from('project_milestones').select('*').eq('project_id',p.id).order('sort_order')).data||[];
-  html+=`<div class="panel"><h3>${esc(p.name)} <span class="badge badge-new">${esc(p.status)}</span></h3>
-  <p class="muted">${esc(p.description||'')}</p>
-  <div style="height:8px;background:rgba(255,255,255,.08);border-radius:4px;margin:1rem 0"><div style="height:8px;width:${p.progress||0}%;background:linear-gradient(90deg,var(--bright),var(--wave));border-radius:4px"></div></div>
-  ${ms.map(m=>`<div style="padding:.4rem 0">${m.status==='done'?'&#10003;':'&#9675;'} ${esc(m.title)} <span class="note">${m.due_date||''}</span></div>`).join('')}</div>`;
+  html+=`<div class="panel"><h3>${esc(p.name)} <span class="badge badge-new">${esc(p.status)}</span></h3><p class="muted">${esc(p.description||'')}</p><div style="height:8px;background:rgba(255,255,255,.08);border-radius:4px;margin:1rem 0"><div style="height:8px;width:${p.progress||0}%;background:linear-gradient(90deg,var(--bright),var(--wave));border-radius:4px"></div></div>${ms.map(m=>`<div style="padding:.4rem 0">${m.status==='done'?'&#10003;':'&#9675;'} ${esc(m.title)} <span class="note">${m.due_date||''}</span></div>`).join('')}</div>`;
 }
 document.getElementById('content').innerHTML=html||'<div class="panel"><p class="muted">No projects yet.</p></div>';
-})();
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
 </script></body></html>

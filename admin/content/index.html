@@ -5,20 +5,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="active">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Edit Content</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="active">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Edit Content</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+(async()=>{try{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
 const TABLES=[
  {key:'services',label:'Services',fields:['title','summary','published']},
  {key:'packages',label:'Packages',fields:['name','price_from','blurb','published']},
@@ -28,36 +23,33 @@ const TABLES=[
  {key:'faqs',label:'FAQs',fields:['question','answer','published']},
  {key:'testimonials',label:'Testimonials',fields:['author','company','quote','published']},
  {key:'portfolio_projects',label:'Portfolio',fields:['title','client_name','summary','published']},
+ {key:'site_settings',label:'Site settings',settings:true},
 ];
 let active=TABLES[0].key;
 function tabs(){return '<div class="chips" style="margin-bottom:1.5rem">'+TABLES.map(t=>`<div class="chip ${t.key===active?'on':''}" onclick="setT('${t.key}')">${t.label}</div>`).join('')+'</div>';}
 window.setT=k=>{active=k;render();};
 async function render(){
  const conf=TABLES.find(t=>t.key===active);
+ if(conf.settings){return renderSettings(conf);}
  const rows=(await db.from(active).select('*').order('sort_order',{ascending:true})).data||[];
  let h=tabs()+`<div class="panel"><h3>${conf.label} (${rows.length})</h3><p class="note" style="margin-bottom:1rem">Edit a field and click Save on that row. Changes appear on the public site immediately.</p>`;
- rows.forEach(r=>{
-   h+=`<div style="border-bottom:1px solid var(--card-line);padding:1rem 0" data-id="${r.id}">`;
-   conf.fields.forEach(f=>{
-     if(f==='published'){h+=`<label class="note"><input type="checkbox" data-f="published" ${r.published?'checked':''}> Published</label> `;}
+ rows.forEach(r=>{h+=`<div style="border-bottom:1px solid var(--card-line);padding:1rem 0" data-id="${r.id}">`;
+   conf.fields.forEach(f=>{if(f==='published'){h+=`<label class="note"><input type="checkbox" data-f="published" ${r.published?'checked':''}> Published</label> `;}
      else{const val=(r[f]==null?'':String(r[f])).replace(/"/g,'&quot;');const long=(f==='answer'||f==='quote'||f==='description'||f==='summary');
-       h+=`<div class="field" style="margin-bottom:.6rem"><label>${f}</label>${long?`<textarea data-f="${f}">${esc(r[f]||'')}</textarea>`:`<input data-f="${f}" value="${val}">`}</div>`;}
-   });
-   h+=`<button class="btn btn-primary btn-sm" onclick="saveRow(this,'${r.id}')">Save</button></div>`;
- });
- h+=`</div>`;
- document.getElementById('content').innerHTML=h;
+       h+=`<div class="field" style="margin-bottom:.6rem"><label>${f}</label>${long?`<textarea data-f="${f}">${esc(r[f]||'')}</textarea>`:`<input data-f="${f}" value="${val}">`}</div>`;}});
+   h+=`<button class="btn btn-primary btn-sm" onclick="saveRow(this,'${r.id}')">Save</button></div>`;});
+ h+=`</div>`;document.getElementById('content').innerHTML=h;
 }
-window.saveRow=async(btn,id)=>{
- const box=btn.closest('[data-id]');const upd={};
- box.querySelectorAll('[data-f]').forEach(el=>{const f=el.dataset.f;
-   if(el.type==='checkbox')upd[f]=el.checked;
-   else if(f==='price_from')upd[f]=el.value?parseFloat(el.value):null;
-   else upd[f]=el.value;});
- btn.textContent='Saving...';
- const{error}=await db.from(active).update(upd).eq('id',id);
- btn.textContent=error?'Error':'Saved';setTimeout(()=>btn.textContent='Save',1200);
-};
+async function renderSettings(conf){
+ const rows=(await db.from('site_settings').select('*')).data||[];
+ const get=k=>{const r=rows.find(x=>x.key===k);let v=r?r.value:'';return (typeof v==='string')?v.replace(/^"|"$/g,''):(v?JSON.stringify(v):'');};
+ const keys=['contact_email','contact_phone','whatsapp','location','business_hours','tagline'];
+ let h=tabs()+`<div class="panel"><h3>Site settings</h3><p class="note" style="margin-bottom:1rem">Contact details shown across the website. Save each field after editing.</p>`;
+ keys.forEach(k=>{h+=`<div class="field"><label>${k}</label><div style="display:flex;gap:.6rem"><input id="set_${k}" value="${esc(get(k))}" style="flex:1"><button class="btn btn-primary btn-sm" onclick="saveSetting('${k}')">Save</button></div></div>`;});
+ h+=`</div>`;document.getElementById('content').innerHTML=h;
+}
+window.saveSetting=async(k)=>{const v=document.getElementById('set_'+k).value;await db.from('site_settings').upsert({key:k,value:JSON.stringify(v)});const b=event.target;b.textContent='Saved';setTimeout(()=>b.textContent='Save',1200);};
+window.saveRow=async(btn,id)=>{const box=btn.closest('[data-id]');const upd={};box.querySelectorAll('[data-f]').forEach(el=>{const f=el.dataset.f;if(el.type==='checkbox')upd[f]=el.checked;else if(f==='price_from')upd[f]=el.value?parseFloat(el.value):null;else upd[f]=el.value;});btn.textContent='Saving...';const{error}=await db.from(active).update(upd).eq('id',id);btn.textContent=error?'Error':'Saved';setTimeout(()=>btn.textContent='Save',1200);};
 render();
-})();
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
 </script></body></html>

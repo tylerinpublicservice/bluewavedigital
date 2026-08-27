@@ -5,38 +5,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/portal/" class="">Dashboard</a><a href="/portal/projects/" class="">Projects</a><a href="/portal/invoices/" class="">Invoices</a><a href="/portal/files/" class="">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="active">Support</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Support</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/portal/" class="">Dashboard</a><a href="/portal/projects/" class="">Projects</a><a href="/portal/invoices/" class="">Invoices</a><a href="/portal/files/" class="">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="active">Support</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Support</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
+(async()=>{try{const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
 const cid=P.client_id;
 async function load(){
  const ts=(await db.from('support_tickets').select('*').eq('client_id',cid).order('created_at',{ascending:false})).data||[];
- document.getElementById('content').innerHTML=`
- <div class="panel"><h3>New support request</h3>
- <div class="field"><label>Subject</label><input id="subj"></div>
- <div class="field"><label>Category</label><select id="cat"><option>issue</option><option>change</option><option>maintenance</option><option>emergency</option></select></div>
- <div class="field"><label>Details</label><textarea id="body"></textarea></div>
- <button class="btn btn-primary" id="submit">Submit request</button></div>
- <div class="panel"><h3>Your requests</h3>${ts.length?ts.map(t=>`<div style="padding:.6rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(t.subject)}</b> <span class="badge ${t.status==='resolved'||t.status==='closed'?'badge-ok':'badge-warn'}">${esc(t.status)}</span> <span class="note">${esc(t.category||'')}</span></div>`).join(''):'<p class="muted">No requests yet.</p>'}</div>`;
- document.getElementById('submit').onclick=async()=>{
-   const subject=document.getElementById('subj').value.trim();const category=document.getElementById('cat').value;const body=document.getElementById('body').value.trim();
-   if(!subject){alert('Please add a subject');return;}
-   const{data:tk,error}=await db.from('support_tickets').insert({client_id:cid,subject,category,created_by:P.id}).select().single();
-   if(!error&&body&&tk){await db.from('ticket_messages').insert({ticket_id:tk.id,author_id:P.id,body});}
-   load();
- };
+ document.getElementById('content').innerHTML=`<div class="panel"><h3>New support request</h3><div class="field"><label>Subject</label><input id="subj"></div><div class="field"><label>Category</label><select id="cat"><option>issue</option><option>change</option><option>maintenance</option><option>emergency</option></select></div><div class="field"><label>Details</label><textarea id="body"></textarea></div><button class="btn btn-primary" id="submit">Submit request</button></div><div class="panel"><h3>Your requests</h3>${ts.length?ts.map(t=>`<div style="padding:.6rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(t.subject)}</b> <span class="badge ${t.status==='resolved'||t.status==='closed'?'badge-ok':'badge-warn'}">${esc(t.status)}</span> <span class="note">${esc(t.category||'')}</span></div>`).join(''):'<p class="muted">No requests yet.</p>'}</div>`;
+ document.getElementById('submit').onclick=async()=>{const subject=document.getElementById('subj').value.trim();const category=document.getElementById('cat').value;const bd=document.getElementById('body').value.trim();if(!subject){alert('Please add a subject');return;}const{data:tk,error}=await db.from('support_tickets').insert({client_id:cid,subject,category,created_by:P.id}).select().single();if(!error&&bd&&tk){await db.from('ticket_messages').insert({ticket_id:tk.id,author_id:P.id,body:bd});}load();};
 }
 load();
-})();
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
 </script></body></html>

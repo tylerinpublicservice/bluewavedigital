@@ -5,26 +5,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="active">Growth</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Growth</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="active">Growth</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Growth</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+(async()=>{try{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
 const au=(await db.from('website_audits').select('*').order('created_at',{ascending:false})).data||[];
 const rf=(await db.from('referrals').select('*').order('created_at',{ascending:false})).data||[];
 const ns=(await db.from('newsletter_subscribers').select('*')).data||[];
-document.getElementById('content').innerHTML=`
-<div class="panel"><h3>Website audit requests (${au.length})</h3>${au.length?au.map(a=>`<div style="padding:.6rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(a.website_url)}</b> <span class="note">${esc(a.email||'')}</span> <span class="badge badge-new">${esc(a.status)}</span></div>`).join(''):'<p class="muted">No audit requests yet.</p>'}</div>
-<div class="panel"><h3>Referrals (${rf.length})</h3>${rf.length?rf.map(r=>`<div style="padding:.5rem 0">${esc(r.referred_name||'')} - <span class="badge badge-new">${esc(r.status)}</span></div>`).join(''):'<p class="muted">No referrals yet.</p>'}</div>
-<div class="panel"><h3>Newsletter subscribers</h3><p class="n" style="font-size:1.6rem;font-family:Montserrat;font-weight:800">${ns.length}</p></div>`;
-})();
+document.getElementById('content').innerHTML=`<div class="panel"><h3>Website audit requests (${au.length})</h3>${au.length?au.map(a=>`<div style="padding:.6rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(a.website_url)}</b> <span class="note">${esc(a.email||'')}</span> <span class="badge badge-new">${esc(a.status)}</span></div>`).join(''):'<p class="muted">No audit requests yet.</p>'}</div><div class="panel"><h3>Referrals (${rf.length})</h3>${rf.length?rf.map(r=>`<div style="padding:.5rem 0">${esc(r.referred_name||'')} - <span class="badge badge-new">${esc(r.status)}</span></div>`).join(''):'<p class="muted">No referrals yet.</p>'}</div><div class="panel"><h3>Newsletter subscribers</h3><p style="font-size:1.6rem;font-family:Montserrat;font-weight:800">${ns.length}</p></div>`;
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
 </script></body></html>

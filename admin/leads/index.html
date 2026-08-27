@@ -5,24 +5,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="active">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Leads</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/admin/" class="">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="active">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Leads</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
+(async()=>{try{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
 const q=(await db.from('quote_requests').select('*').order('created_at',{ascending:false})).data||[];
 const c=(await db.from('contact_messages').select('*').order('created_at',{ascending:false})).data||[];
 document.getElementById('content').innerHTML=`
 <div class="panel"><h3>Quote requests (${q.length})</h3>${q.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Date</th><th>Name</th><th>Email</th><th>Need</th><th>Budget</th><th>Status</th></tr></thead><tbody>${q.map(r=>`<tr><td>${(r.created_at||'').slice(0,10)}</td><td>${esc(r.name||'')}</td><td>${esc(r.email||'')}</td><td>${esc(r.need||'')}</td><td>${esc(r.budget||'')}</td><td><span class="badge badge-new">${esc(r.status)}</span></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No quote requests yet.</p>'}</div>
 <div class="panel"><h3>Contact messages (${c.length})</h3>${c.length?c.map(m=>`<div style="padding:.7rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(m.name||'')}</b> <span class="note">${esc(m.email||'')}</span><p class="muted">${esc(m.message||'')}</p></div>`).join(''):'<p class="muted">No messages yet.</p>'}</div>`;
-})();
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
 </script></body></html>

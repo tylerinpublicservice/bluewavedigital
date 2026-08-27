@@ -5,34 +5,31 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash">
-<aside class="dash-side">
+<div class="dash"><aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/portal/" class="active">Dashboard</a><a href="/portal/projects/" class="">Projects</a><a href="/portal/invoices/" class="">Invoices</a><a href="/portal/files/" class="">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="">Support</a>
-<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
-</aside>
-<main class="dash-main">
-<div class="dash-top"><h1>Dashboard</h1><div id="who" class="note"></div></div>
-<div id="content"></div>
-</main></div>
+<a href="/portal/" class="active">Dashboard</a><a href="/portal/projects/" class="">Projects</a><a href="/portal/invoices/" class="">Invoices</a><a href="/portal/files/" class="">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="">Support</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
+<main class="dash-main"><div class="dash-top"><h1>Dashboard</h1><div id="who" class="note"></div></div>
+<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
+(async()=>{
+try{
+const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
 const cid=P.client_id;
-if(!cid){document.getElementById('content').innerHTML='<div class="panel">Your account isn\'t linked to a client profile yet. Please contact BlueWave.</div>';return;}
+if(!cid){document.getElementById('content').innerHTML='<div class="panel">Your account is not linked to a client profile yet. Please contact BlueWave.</div>';return;}
 const projects=(await db.from('projects').select('*').eq('client_id',cid)).data||[];
 const invoices=(await db.from('invoices').select('*').eq('client_id',cid)).data||[];
 const tickets=(await db.from('support_tickets').select('*').eq('client_id',cid).neq('status','closed')).data||[];
-const approvals=(await db.from('approvals').select('*, projects!inner(client_id)').eq('projects.client_id',cid).eq('status','awaiting')).data||[];
+const approvals=(await db.from('approvals').select('id,status,project_id, projects!inner(client_id)').eq('projects.client_id',cid).eq('status','awaiting')).data||[];
 document.getElementById('content').innerHTML=`
 <div class="stat-grid">
 <div class="stat"><div class="n">${projects.length}</div><div class="l">Projects</div></div>
 <div class="stat"><div class="n">${invoices.filter(i=>i.status!=='paid').length}</div><div class="l">Unpaid invoices</div></div>
 <div class="stat"><div class="n">${approvals.length}</div><div class="l">Awaiting approval</div></div>
-<div class="stat"><div class="n">${tickets.length}</div><div class="l">Open tickets</div></div>
-</div>
+<div class="stat"><div class="n">${tickets.length}</div><div class="l">Open tickets</div></div></div>
 <div class="panel"><h3>Your projects</h3>${projects.length?projects.map(p=>`<div style="padding:.6rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(p.name)}</b> <span class="badge badge-new">${esc(p.status)}</span><div style="height:6px;background:rgba(255,255,255,.08);border-radius:4px;margin-top:.5rem"><div style="height:6px;width:${p.progress||0}%;background:linear-gradient(90deg,var(--bright),var(--wave));border-radius:4px"></div></div></div>`).join(''):'<p class="muted">No projects yet.</p>'}</div>
 <div class="panel"><h3>Quick links</h3><a class="btn btn-ghost btn-sm" href="/portal/invoices/">Invoices</a> <a class="btn btn-ghost btn-sm" href="/portal/approvals/">Approvals</a> <a class="btn btn-ghost btn-sm" href="/portal/support/">Get support</a></div>`;
+}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error loading dashboard: '+esc(e.message)+'</div>';}
 })();
 </script></body></html>
