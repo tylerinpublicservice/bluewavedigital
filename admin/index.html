@@ -1,36 +1,277 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin - BlueWave</title>
+<title>Admin - BlueWave Digital</title>
 <link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash"><aside class="dash-side">
+<div class="dash">
+<aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/admin/" class="active">Dashboard</a><a href="/admin/content/" class="">Content</a><a href="/admin/leads/" class="">Leads</a><a href="/admin/clients/" class="">Clients</a><a href="/admin/projects/" class="">Projects</a><a href="/admin/invoices/" class="">Invoices</a><a href="/admin/support/" class="">Support</a><a href="/admin/growth/" class="">Growth</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
-<main class="dash-main"><div class="dash-top"><h1>Staff Dashboard</h1><div id="who" class="note"></div></div>
-<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
+<a href="#dashboard" data-v="dashboard">Dashboard</a>
+<a href="#content" data-v="content">Content</a>
+<a href="#leads" data-v="leads">Leads</a>
+<a href="#messages" data-v="messages">Messages</a>
+<a href="#clients" data-v="clients">Clients</a>
+<a href="#projects" data-v="projects">Projects</a>
+<a href="#invoices" data-v="invoices">Invoices</a>
+<a href="#support" data-v="support">Support</a>
+<a href="#growth" data-v="growth">Growth</a>
+<a href="#account" data-v="account">Account</a>
+<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
+</aside>
+<main class="dash-main">
+<div class="dash-top"><h1 id="vtitle">Dashboard</h1><div id="who" class="note"></div></div>
+<div id="view"><div class="panel"><p class="muted">Loading...</p></div></div>
+</main></div>
+<div id="modalRoot"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{try{const P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';
-const leads=(await db.from('quote_requests').select('id,status')).data||[];
-const clients=(await db.from('clients').select('id')).data||[];
-const projects=(await db.from('projects').select('id,status')).data||[];
-const invoices=(await db.from('invoices').select('total,status')).data||[];
-const tickets=(await db.from('support_tickets').select('id,status')).data||[];
-const paid=invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+Number(i.total||0),0);
-document.getElementById('content').innerHTML=`
-<div class="stat-grid">
-<div class="stat"><div class="n">${leads.filter(l=>l.status==='new').length}</div><div class="l">New leads</div></div>
-<div class="stat"><div class="n">${clients.length}</div><div class="l">Clients</div></div>
-<div class="stat"><div class="n">${projects.filter(p=>p.status!=='live').length}</div><div class="l">Active projects</div></div>
-<div class="stat"><div class="n">SCR ${paid.toLocaleString('en-US')}</div><div class="l">Collected</div></div></div>
-<div class="panel"><h3>Jump to</h3>
-<a class="btn btn-ghost btn-sm" href="/admin/leads/">Leads (${leads.length})</a>
-<a class="btn btn-ghost btn-sm" href="/admin/clients/">Clients &amp; accounts</a>
-<a class="btn btn-ghost btn-sm" href="/admin/content/">Edit content</a>
-<a class="btn btn-ghost btn-sm" href="/admin/invoices/">Invoices</a>
-<a class="btn btn-ghost btn-sm" href="/admin/support/">Support (${tickets.filter(t=>t.status==='open').length} open)</a></div>`;
-}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>';}})();
+let P=null;
+/* ---------- helpers ---------- */
+const V=document.getElementById('view');
+const set=(h)=>{V.innerHTML=h;};
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2200);}
+function modal(html){const r=document.getElementById('modalRoot');r.innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal"><div class="modal-head"><div style="flex:1">${html.title||''}</div><button class="modal-close" onclick="closeModal()">&times;</button></div><div id="modalBody">${html.body||''}</div></div></div>`;}
+function closeModal(){document.getElementById('modalRoot').innerHTML='';}
+window.closeModal=closeModal;
+async function delRow(table,id,cb){if(!confirm('Delete this permanently?'))return;const{error}=await db.from(table).delete().eq('id',id);if(error){alert(error.message);return;}toast('Deleted');cb&&cb();}
+function opt(sel,v){return sel===v?'selected':'';}
+function badge(s){const m={new:'badge-new',reviewing:'badge-warn',quoted:'badge-warn',won:'badge-ok',lost:'badge-bad',open:'badge-warn',in_progress:'badge-warn',resolved:'badge-ok',closed:'badge-ok',paid:'badge-ok',overdue:'badge-bad',sent:'badge-warn',draft:'badge-new',awaiting:'badge-new',approved:'badge-ok',changes_requested:'badge-warn',active:'badge-ok',requested:'badge-new'};return `<span class="badge ${m[s]||'badge-new'}">${esc(s)}</span>`;}
+
+/* ---------- CONTENT SCHEMAS ---------- */
+const SCHEMAS={
+ services:{label:'Services',order:'sort_order',fields:[['title','text'],['slug','text'],['summary','textarea'],['body','textarea'],['sort_order','number'],['published','bool']]},
+ packages:{label:'Packages',order:'sort_order',fields:[['name','text'],['slug','text'],['price_from','number'],['currency','text'],['blurb','textarea'],['highlight','bool'],['sort_order','number'],['published','bool']]},
+ package_features:{label:'Package features',order:'sort_order',fields:[['package_id','ref:packages'],['label','text'],['value','text'],['included','bool'],['sort_order','number']]},
+ care_plans:{label:'Care plans',order:'sort_order',fields:[['name','text'],['slug','text'],['price_from','number'],['currency','text'],['interval','text'],['blurb','textarea'],['sort_order','number'],['published','bool']]},
+ value_props:{label:'Why BlueWave',order:'sort_order',fields:[['title','text'],['description','textarea'],['sort_order','number']]},
+ process_steps:{label:'Process',order:'sort_order',fields:[['title','text'],['description','textarea'],['sort_order','number']]},
+ faqs:{label:'FAQs',order:'sort_order',fields:[['question','text'],['answer','textarea'],['sort_order','number'],['published','bool']]},
+ testimonials:{label:'Testimonials',order:'sort_order',fields:[['author','text'],['role','text'],['company','text'],['quote','textarea'],['avatar_url','text'],['sort_order','number'],['published','bool']]},
+ portfolio_projects:{label:'Portfolio',order:'sort_order',fields:[['title','text'],['slug','text'],['client_name','text'],['industry','text'],['project_year','number'],['cover_image_url','text'],['summary','textarea'],['challenge','textarea'],['solution','textarea'],['results','textarea'],['live_url','text'],['featured','bool'],['sort_order','number'],['published','bool']]},
+ partners:{label:'Partners',order:'sort_order',fields:[['name','text'],['url','text'],['logo_url','text'],['blurb','textarea'],['sort_order','number'],['published','bool']]},
+ pages:{label:'Legal & Pages',pk:'slug',order:'slug',fields:[['slug','text'],['title','text'],['body','textarea']]},
+};
+
+/* ---------- VIEWS ---------- */
+const VIEWS={dashboard:vDash,content:vContent,leads:vLeads,messages:vMessages,clients:vClients,projects:vProjects,invoices:vInvoices,support:vSupport,growth:vGrowth,account:vAccount};
+
+async function vDash(){
+ const leads=(await db.from('quote_requests').select('id,status')).data||[];
+ const clients=(await db.from('clients').select('id')).data||[];
+ const projects=(await db.from('projects').select('id,status')).data||[];
+ const invoices=(await db.from('invoices').select('total,status')).data||[];
+ const tickets=(await db.from('support_tickets').select('id,status')).data||[];
+ const msgs=(await db.from('contact_messages').select('id,status')).data||[];
+ const paid=invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+Number(i.total||0),0);
+ const due=invoices.filter(i=>i.status!=='paid').reduce((s,i)=>s+Number(i.total||0),0);
+ set(`<div class="stat-grid">
+ <div class="stat"><div class="n">${leads.filter(l=>l.status==='new').length}</div><div class="l">New leads</div></div>
+ <div class="stat"><div class="n">${clients.length}</div><div class="l">Clients</div></div>
+ <div class="stat"><div class="n">${projects.filter(p=>p.status!=='live').length}</div><div class="l">Active projects</div></div>
+ <div class="stat"><div class="n">SCR ${paid.toLocaleString('en-US')}</div><div class="l">Collected</div></div></div>
+ <div class="stat-grid">
+ <div class="stat"><div class="n">${invoices.filter(i=>i.status!=='paid').length}</div><div class="l">Unpaid invoices</div></div>
+ <div class="stat"><div class="n">SCR ${due.toLocaleString('en-US')}</div><div class="l">Outstanding</div></div>
+ <div class="stat"><div class="n">${tickets.filter(t=>t.status==='open').length}</div><div class="l">Open tickets</div></div>
+ <div class="stat"><div class="n">${msgs.filter(m=>m.status==='new').length}</div><div class="l">New messages</div></div></div>`);
+}
+
+/* ----- CONTENT (full CRUD incl. create/delete + pages + settings) ----- */
+let contentKey='services';
+async function vContent(){
+ const keys=Object.keys(SCHEMAS);
+ let tabs=`<div class="pill-tabs">${keys.map(k=>`<div class="chip ${k===contentKey?'on':''}" onclick="setContent('${k}')">${SCHEMAS[k].label}</div>`).join('')}<div class="chip ${contentKey==='__settings'?'on':''}" onclick="setContent('__settings')">Site settings</div></div>`;
+ if(contentKey==='__settings'){set(tabs+await settingsHTML());return;}
+ const c=SCHEMAS[contentKey];const pk=c.pk||'id';
+ const rows=(await db.from(contentKey).select('*').order(c.order,{ascending:true})).data||[];
+ let rowsHtml=rows.map(r=>{
+   const title=esc(r.title||r.name||r.question||r.author||r.label||r.slug||'(row)');
+   const pub=('published' in r)?(r.published?badge('active'):'<span class="badge badge-bad">hidden</span>'):'';
+   return `<tr><td>${title}</td><td>${pub}</td><td class="row-actions">
+     <button class="icon-btn" onclick="editContent('${contentKey}','${r[pk]}')">Edit</button>
+     <button class="icon-btn danger" onclick="delContent('${contentKey}','${r[pk]}')">Delete</button></td></tr>`;
+ }).join('');
+ set(tabs+`<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3>${c.label}</h3><button class="btn btn-primary btn-sm" onclick="editContent('${contentKey}',null)">+ Add new</button></div>
+ <div class="table-wrap"><table class="data"><thead><tr><th>Item</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rowsHtml||'<tr><td colspan="3" class="muted">Nothing yet. Add one.</td></tr>'}</tbody></table></div></div>`);
+}
+window.setContent=k=>{contentKey=k;vContent();};
+window.editContent=async(key,id)=>{
+ const c=SCHEMAS[key];const pk=c.pk||'id';let row={};
+ if(id){row=(await db.from(key).select('*').eq(pk,id).single()).data||{};}
+ let body='';
+ for(const [f,t] of c.fields){
+   const val=row[f]==null?'':row[f];
+   if(t==='bool'){body+=`<div class="field"><label><input type="checkbox" data-f="${f}" ${val?'checked':''}> ${f}</label></div>`;}
+   else if(t==='textarea'){body+=`<div class="field"><label>${f}</label><textarea data-f="${f}">${esc(val)}</textarea></div>`;}
+   else if(t==='number'){body+=`<div class="field"><label>${f}</label><input type="number" data-f="${f}" value="${esc(val)}"></div>`;}
+   else if(t&&t.startsWith('ref:')){const rt=t.split(':')[1];const opts=(await db.from(rt).select('id,name,title,label')).data||[];body+=`<div class="field"><label>${f}</label><select data-f="${f}">${opts.map(o=>`<option value="${o.id}" ${opt(String(val),String(o.id))}>${esc(o.name||o.title||o.label||o.id)}</option>`).join('')}</select></div>`;}
+   else{body+=`<div class="field"><label>${f}</label><input data-f="${f}" value="${esc(val)}"></div>`;}
+ }
+ body+=`<button class="btn btn-primary" onclick="saveContent('${key}','${id||''}')">Save</button>`;
+ modal({title:`<h3>${id?'Edit':'Add'} ${c.label}</h3>`,body});
+};
+window.saveContent=async(key,id)=>{
+ const c=SCHEMAS[key];const pk=c.pk||'id';const rec={};
+ document.querySelectorAll('#modalBody [data-f]').forEach(el=>{const f=el.dataset.f;
+   if(el.type==='checkbox')rec[f]=el.checked;
+   else if(el.type==='number')rec[f]=el.value===''?null:Number(el.value);
+   else rec[f]=el.value;});
+ let error;
+ if(id){({error}=await db.from(key).update(rec).eq(pk,id));}
+ else{({error}=await db.from(key).insert(rec));}
+ if(error){alert(error.message);return;}
+ closeModal();toast('Saved');vContent();
+};
+window.delContent=(key,id)=>{const c=SCHEMAS[key];const pk=c.pk||'id';if(!confirm('Delete permanently?'))return;db.from(key).delete().eq(pk,id).then(({error})=>{if(error){alert(error.message);return;}toast('Deleted');vContent();});};
+
+async function settingsHTML(){
+ const rows=(await db.from('site_settings').select('*')).data||[];
+ const get=k=>{const r=rows.find(x=>x.key===k);let v=r?r.value:'';return (typeof v==='string')?v.replace(/^"|"$/g,''):(v?JSON.stringify(v):'');};
+ const keys=['contact_email','contact_phone','whatsapp','location','business_hours','tagline'];
+ return `<div class="panel"><h3>Site settings</h3>${keys.map(k=>`<div class="field"><label>${k}</label><div style="display:flex;gap:.6rem"><input id="set_${k}" value="${esc(get(k))}" style="flex:1"><button class="btn btn-primary btn-sm" onclick="saveSetting('${k}')">Save</button></div></div>`).join('')}</div>`;
+}
+window.saveSetting=async(k)=>{const v=document.getElementById('set_'+k).value;const{error}=await db.from('site_settings').upsert({key:k,value:JSON.stringify(v)});if(error){alert(error.message);return;}toast('Saved');};
+
+/* ----- LEADS (quote_requests) full detail + status + delete + convert ----- */
+async function vLeads(){
+ const q=(await db.from('quote_requests').select('*').order('created_at',{ascending:false})).data||[];
+ set(`<div class="panel"><h3>Quote requests (${q.length})</h3><div class="table-wrap"><table class="data"><thead><tr><th>Date</th><th>Name</th><th>Need</th><th>Budget</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+ ${q.length?q.map(r=>`<tr><td>${(r.created_at||'').slice(0,10)}</td><td>${esc(r.name||'')}</td><td>${esc(r.need||'')}</td><td>${esc(r.budget||'')}</td>
+ <td><select class="mini" onchange="leadStatus('${r.id}',this.value)">${['new','reviewing','quoted','won','lost'].map(s=>`<option ${opt(r.status,s)}>${s}</option>`).join('')}</select></td>
+ <td class="row-actions"><button class="icon-btn" onclick="leadView('${r.id}')">View</button><button class="icon-btn" onclick='leadToClient(${JSON.stringify(JSON.stringify({name:r.name,email:r.email,phone:r.phone}))})'>To client</button><button class="icon-btn danger" onclick="delRow('quote_requests','${r.id}',vLeads)">Delete</button></td></tr>`).join(''):'<tr><td colspan="6" class="muted">No leads yet.</td></tr>'}
+ </tbody></table></div></div>`);
+ window._leads=q;
+}
+window.leadStatus=async(id,status)=>{await db.from('quote_requests').update({status}).eq('id',id);toast('Updated');};
+window.leadView=(id)=>{const r=(window._leads||[]).find(x=>x.id===id);if(!r)return;
+ const rows=[['Name',r.name],['Company',r.company],['Email',r.email],['Phone',r.phone],['Need',r.need],['Budget',r.budget],['Timeline',r.timeline],['Has website',r.has_website?'Yes':'No'],['Website',r.website_url],['Business',r.business_info],['Goals',r.goals],['Features',(r.features||[]).join(', ')]];
+ modal({title:`<h3>${esc(r.name||'Lead')}</h3>`,body:rows.filter(x=>x[1]).map(x=>`<div style="padding:.4rem 0;border-bottom:1px solid var(--card-line)"><b>${x[0]}:</b> ${esc(String(x[1]))}</div>`).join('')+`<div style="margin-top:1rem"><a class="btn btn-primary btn-sm" href="mailto:${esc(r.email||'')}">Email ${esc(r.name||'')}</a></div>`});
+};
+window.leadToClient=async(s)=>{const d=JSON.parse(s);if(!d.email){alert('This lead has no email.');return;}if(!confirm('Create a client record for '+(d.name||d.email)+'?'))return;const{error}=await db.from('clients').insert({name:d.name||d.email,email:d.email,phone:d.phone});if(error){alert(error.message);return;}toast('Client created. Invite them from Clients.');};
+
+/* ----- MESSAGES (contact_messages) separate section ----- */
+async function vMessages(){
+ const c=(await db.from('contact_messages').select('*').order('created_at',{ascending:false})).data||[];
+ set(`<div class="panel"><h3>Contact messages (${c.length})</h3>${c.length?c.map(m=>`<div style="padding:.9rem 0;border-bottom:1px solid var(--card-line)">
+ <div style="display:flex;justify-content:space-between;gap:1rem"><div><b>${esc(m.name||'')}</b> <span class="note">${esc(m.email||'')} ${m.phone?('· '+esc(m.phone)):''}</span> ${m.status==='new'?badge('new'):''}</div>
+ <div class="row-actions"><a class="icon-btn" href="mailto:${esc(m.email||'')}">Reply</a>${m.status==='new'?`<button class="icon-btn" onclick="msgRead('${m.id}')">Mark read</button>`:''}<button class="icon-btn danger" onclick="delRow('contact_messages','${m.id}',vMessages)">Delete</button></div></div>
+ <p class="muted" style="margin-top:.4rem">${esc(m.message||'')}</p></div>`).join(''):'<p class="muted">No messages yet.</p>'}</div>`);
+}
+window.msgRead=async(id)=>{await db.from('contact_messages').update({status:'read'}).eq('id',id);toast('Marked read');vMessages();};
+
+/* ----- CLIENTS + accounts ----- */
+async function acct(payload){const {data:{session}}=await db.auth.getSession();const res=await fetch(`${SUPABASE_URL}/functions/v1/manage-accounts`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session?session.access_token:SUPABASE_KEY)},body:JSON.stringify(payload)});let out={};try{out=await res.json();}catch(e){}if(!res.ok||out.error)throw new Error(out.error||('HTTP '+res.status));return out;}
+async function vClients(){
+ let STATUS={};try{const o=await acct({action:'status'});(o.users||[]).forEach(u=>STATUS[(u.email||'').toLowerCase()]=u.state);}catch(e){}
+ const cl=(await db.from('clients').select('*').order('created_at',{ascending:false})).data||[];
+ const st=e=>{const s=STATUS[(e||'').toLowerCase()];return s==='active'?badge('active'):(s==='invited'?'<span class="badge badge-warn">awaiting password</span>':'<span class="badge badge-new">no login</span>');};
+ set(`<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3>Clients (${cl.length})</h3><button class="btn btn-primary btn-sm" onclick="inviteModal()">+ Invite client</button></div>
+ <div class="table-wrap"><table class="data"><thead><tr><th>Name</th><th>Email</th><th>Account</th><th>Actions</th></tr></thead><tbody>
+ ${cl.length?cl.map(c=>`<tr><td>${esc(c.name)}</td><td>${esc(c.email||'')}</td><td>${c.email?st(c.email):'<span class="note">no email</span>'}</td>
+ <td class="row-actions"><button class="icon-btn" onclick="clientEdit('${c.id}')">Edit</button>${c.email?`<button class="icon-btn" onclick="acctAct('resend','${esc(c.email)}',this)">Resend</button><button class="icon-btn" onclick="acctAct('reset','${esc(c.email)}',this)">Reset pw</button>`:''}<button class="icon-btn danger" onclick="delRow('clients','${c.id}',vClients)">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" class="muted">No clients yet.</td></tr>'}
+ </tbody></table></div></div>`);
+ window._clients=cl;
+}
+window.inviteModal=()=>modal({title:'<h3>Invite client</h3>',body:`<div id="im"></div><div class="field"><label>Name</label><input id="cn"></div><div class="field"><label>Email</label><input id="ce" type="email"></div><div class="field"><label>Country</label><input id="cc"></div><div class="field"><label>Phone</label><input id="cp"></div><button class="btn btn-primary" onclick="doInvite()">Create & send invite</button>`});
+window.doInvite=async()=>{const name=document.getElementById('cn').value.trim(),email=document.getElementById('ce').value.trim(),country=document.getElementById('cc').value.trim(),phone=document.getElementById('cp').value.trim();const im=document.getElementById('im');if(!name||!email){im.innerHTML='<div class="alert alert-bad">Name and email required.</div>';return;}try{await acct({action:'invite',name,email,country,phone});closeModal();toast('Invite sent');vClients();}catch(e){im.innerHTML='<div class="alert alert-bad">Failed: '+esc(e.message)+'</div>';}};
+window.acctAct=async(action,email,btn)=>{const o=btn.textContent;btn.textContent='...';try{await acct({action,email});toast('Sent');}catch(e){alert('Failed: '+e.message);}btn.textContent=o;};
+window.clientEdit=async(id)=>{const c=(window._clients||[]).find(x=>x.id===id)||{};modal({title:'<h3>Edit client</h3>',body:`<div class="field"><label>Name</label><input id="en" value="${esc(c.name||'')}"></div><div class="field"><label>Email</label><input id="ee" value="${esc(c.email||'')}"></div><div class="field"><label>Phone</label><input id="ep" value="${esc(c.phone||'')}"></div><div class="field"><label>Country</label><input id="ec" value="${esc(c.country||'')}"></div><div class="field"><label>Notes</label><textarea id="eo">${esc(c.notes||'')}</textarea></div><button class="btn btn-primary" onclick="saveClient('${id}')">Save</button>`});};
+window.saveClient=async(id)=>{const upd={name:document.getElementById('en').value,email:document.getElementById('ee').value,phone:document.getElementById('ep').value,country:document.getElementById('ec').value,notes:document.getElementById('eo').value};const{error}=await db.from('clients').update(upd).eq('id',id);if(error){alert(error.message);return;}closeModal();toast('Saved');vClients();};
+
+/* ----- PROJECTS full CRUD + milestones ----- */
+async function vProjects(){
+ const cl=(await db.from('clients').select('id,name')).data||[];
+ const pr=(await db.from('projects').select('*').order('created_at',{ascending:false})).data||[];
+ const nm=id=>{const c=cl.find(x=>x.id===id);return c?c.name:'-';};
+ set(`<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3>Projects (${pr.length})</h3><button class="btn btn-primary btn-sm" onclick="projModal(null)">+ New project</button></div>
+ <div class="table-wrap"><table class="data"><thead><tr><th>Project</th><th>Client</th><th>Status</th><th>Progress</th><th>Actions</th></tr></thead><tbody>
+ ${pr.length?pr.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(nm(p.client_id))}</td><td>${badge(p.status)}</td><td>${p.progress||0}%</td>
+ <td class="row-actions"><button class="icon-btn" onclick="projModal('${p.id}')">Edit</button><button class="icon-btn" onclick="milestones('${p.id}')">Milestones</button><button class="icon-btn danger" onclick="delRow('projects','${p.id}',vProjects)">Delete</button></td></tr>`).join(''):'<tr><td colspan="5" class="muted">No projects.</td></tr>'}
+ </tbody></table></div></div>`);
+ window._cl=cl;window._pr=pr;
+}
+window.projModal=async(id)=>{const cl=window._cl||[];const p=id?(window._pr||[]).find(x=>x.id===id)||{}:{};
+ modal({title:`<h3>${id?'Edit':'New'} project</h3>`,body:`<div class="field"><label>Client</label><select id="pc">${cl.map(c=>`<option value="${c.id}" ${opt(String(p.client_id),String(c.id))}>${esc(c.name)}</option>`).join('')}</select></div>
+ <div class="field"><label>Name</label><input id="pn" value="${esc(p.name||'')}"></div>
+ <div class="field"><label>Description</label><textarea id="pd">${esc(p.description||'')}</textarea></div>
+ <div class="field"><label>Status</label><select id="ps">${['planning','design','dev','review','live','on_hold'].map(s=>`<option ${opt(p.status,s)}>${s}</option>`).join('')}</select></div>
+ <div class="field"><label>Progress: <span id="pv">${p.progress||0}</span>%</label><input class="progress-input" type="range" min="0" max="100" id="pp" value="${p.progress||0}" oninput="document.getElementById('pv').textContent=this.value"></div>
+ <div class="field"><label>Target date</label><input type="date" id="pt" value="${p.target_date||''}"></div>
+ <button class="btn btn-primary" onclick="saveProj('${id||''}')">Save</button>`});};
+window.saveProj=async(id)=>{const rec={client_id:document.getElementById('pc').value,name:document.getElementById('pn').value,description:document.getElementById('pd').value,status:document.getElementById('ps').value,progress:Number(document.getElementById('pp').value),target_date:document.getElementById('pt').value||null};if(!rec.name||!rec.client_id){alert('Client and name required');return;}let error;if(id){({error}=await db.from('projects').update(rec).eq('id',id));}else{({error}=await db.from('projects').insert(rec));}if(error){alert(error.message);return;}closeModal();toast('Saved');vProjects();};
+window.milestones=async(pid)=>{
+ async function draw(){const ms=(await db.from('project_milestones').select('*').eq('project_id',pid).order('sort_order')).data||[];
+  document.getElementById('modalBody').innerHTML=`${ms.map(m=>`<div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--card-line)"><span>${m.status==='done'?'&#10003;':'&#9675;'} ${esc(m.title)}</span><span class="row-actions"><button class="icon-btn" onclick="msToggle('${m.id}','${m.status==='done'?'pending':'done'}','${pid}')">${m.status==='done'?'Undo':'Done'}</button><button class="icon-btn danger" onclick="msDel('${m.id}','${pid}')">x</button></span></div>`).join('')||'<p class="muted">No milestones.</p>'}
+  <div class="field" style="margin-top:1rem"><label>Add milestone</label><input id="msTitle" placeholder="e.g. Homepage design"></div><button class="btn btn-primary btn-sm" onclick="msAdd('${pid}')">Add</button>`;}
+ modal({title:'<h3>Milestones</h3>',body:'Loading...'});draw();window._msdraw=draw;
+};
+window.msAdd=async(pid)=>{const t=document.getElementById('msTitle').value.trim();if(!t)return;await db.from('project_milestones').insert({project_id:pid,title:t});window._msdraw();};
+window.msToggle=async(id,status)=>{await db.from('project_milestones').update({status}).eq('id',id);window._msdraw();};
+window.msDel=async(id)=>{await db.from('project_milestones').delete().eq('id',id);window._msdraw();};
+
+/* ----- INVOICES full ----- */
+async function vInvoices(){
+ const cl=(await db.from('clients').select('id,name')).data||[];
+ const inv=(await db.from('invoices').select('*').order('created_at',{ascending:false})).data||[];
+ const nm=id=>{const c=cl.find(x=>x.id===id);return c?c.name:'-';};
+ set(`<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><h3>Invoices (${inv.length})</h3><button class="btn btn-primary btn-sm" onclick="invModal()">+ New invoice</button></div>
+ <div class="table-wrap"><table class="data"><thead><tr><th>Number</th><th>Client</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+ ${inv.length?inv.map(i=>`<tr><td>${esc(i.number||'-')}</td><td>${esc(nm(i.client_id))}</td><td>${money(i.total,i.currency)}</td>
+ <td><select class="mini" onchange="invStatus('${i.id}',this.value)">${['draft','sent','paid','overdue','void'].map(s=>`<option ${opt(i.status,s)}>${s}</option>`).join('')}</select></td>
+ <td class="row-actions"><button class="icon-btn" onclick="invView('${i.id}')">View</button><button class="icon-btn danger" onclick="delRow('invoices','${i.id}',vInvoices)">Delete</button></td></tr>`).join(''):'<tr><td colspan="5" class="muted">No invoices.</td></tr>'}
+ </tbody></table></div></div>`);
+ window._invcl=cl;window._inv=inv;
+}
+window.invModal=()=>{const cl=window._invcl||[];modal({title:'<h3>New invoice</h3>',body:`<div class="field"><label>Client</label><select id="ic">${cl.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select></div><div class="field"><label>Description</label><input id="idesc" placeholder="Website design - deposit"></div><div class="field"><label>Amount (SCR)</label><input id="iamt" type="number"></div><div class="field"><label>Due date</label><input type="date" id="idue"></div><button class="btn btn-primary" onclick="saveInv()">Create</button>`});};
+window.saveInv=async()=>{const client_id=document.getElementById('ic').value;const desc=document.getElementById('idesc').value.trim();const amt=parseFloat(document.getElementById('iamt').value||'0');const due=document.getElementById('idue').value||null;if(!client_id||!amt){alert('Client and amount required');return;}const{data:iv,error}=await db.from('invoices').insert({client_id,status:'sent',subtotal:amt,total:amt,currency:'SCR',due_date:due}).select().single();if(error){alert(error.message);return;}if(iv)await db.from('invoice_line_items').insert({invoice_id:iv.id,description:desc||'Services',quantity:1,unit_price:amt,amount:amt});closeModal();toast('Invoice created');vInvoices();};
+window.invStatus=async(id,status)=>{const upd={status};if(status==='paid')upd.paid_at=new Date().toISOString();await db.from('invoices').update(upd).eq('id',id);toast('Updated');};
+window.invView=async(id)=>{const i=(window._inv||[]).find(x=>x.id===id);const items=(await db.from('invoice_line_items').select('*').eq('invoice_id',id)).data||[];modal({title:`<h3>${esc(i.number||'Invoice')}</h3>`,body:`<p class="note">Status: ${esc(i.status)} · Issued ${i.issue_date||''} · Due ${i.due_date||''}</p><div class="table-wrap" style="margin:1rem 0"><table class="data"><thead><tr><th>Item</th><th>Qty</th><th>Amount</th></tr></thead><tbody>${items.map(it=>`<tr><td>${esc(it.description)}</td><td>${it.quantity}</td><td>${money(it.amount,i.currency)}</td></tr>`).join('')}</tbody></table></div><b>Total: ${money(i.total,i.currency)}</b>`});};
+
+/* ----- SUPPORT with threads ----- */
+async function vSupport(){
+ const ts=(await db.from('support_tickets').select('*').order('created_at',{ascending:false})).data||[];
+ const cl=(await db.from('clients').select('id,name')).data||[];const nm=id=>{const c=cl.find(x=>x.id===id);return c?c.name:'';};
+ set(`<div class="panel"><h3>Support tickets (${ts.length})</h3><div class="table-wrap"><table class="data"><thead><tr><th>Subject</th><th>Client</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+ ${ts.length?ts.map(t=>`<tr><td>${esc(t.subject)}</td><td>${esc(nm(t.client_id))}</td><td>${esc(t.category||'')}</td>
+ <td><select class="mini" onchange="tkStatus('${t.id}',this.value)">${['open','in_progress','resolved','closed'].map(s=>`<option ${opt(t.status,s)}>${s}</option>`).join('')}</select></td>
+ <td class="row-actions"><button class="icon-btn" onclick="tkThread('${t.id}','${esc(t.subject)}')">Open</button><button class="icon-btn danger" onclick="delRow('support_tickets','${t.id}',vSupport)">Delete</button></td></tr>`).join(''):'<tr><td colspan="5" class="muted">No tickets.</td></tr>'}
+ </tbody></table></div></div>`);
+}
+window.tkStatus=async(id,status)=>{await db.from('support_tickets').update({status}).eq('id',id);toast('Updated');};
+window.tkThread=async(id,subj)=>{
+ async function draw(){const ms=(await db.from('ticket_messages').select('*').eq('ticket_id',id).order('created_at')).data||[];
+  document.getElementById('modalBody').innerHTML=`${ms.map(m=>`<div style="padding:.5rem 0;border-bottom:1px solid var(--card-line)">${esc(m.body)}</div>`).join('')||'<p class="muted">No replies yet.</p>'}<div class="field" style="margin-top:1rem"><textarea id="tkReply" placeholder="Write a reply"></textarea></div><button class="btn btn-primary btn-sm" onclick="tkSend('${id}')">Send reply</button>`;}
+ modal({title:`<h3>${subj}</h3>`,body:'Loading...'});draw();window._tkdraw=draw;
+};
+window.tkSend=async(id)=>{const b=document.getElementById('tkReply').value.trim();if(!b)return;await db.from('ticket_messages').insert({ticket_id:id,author_id:P.id,body:b});window._tkdraw();};
+
+/* ----- GROWTH ----- */
+async function vGrowth(){
+ const au=(await db.from('website_audits').select('*').order('created_at',{ascending:false})).data||[];
+ const rf=(await db.from('referrals').select('*').order('created_at',{ascending:false})).data||[];
+ const ns=(await db.from('newsletter_subscribers').select('*')).data||[];
+ set(`<div class="panel"><h3>Website audit requests (${au.length})</h3><div class="table-wrap"><table class="data"><thead><tr><th>URL</th><th>Email</th><th>Status</th><th></th></tr></thead><tbody>${au.length?au.map(a=>`<tr><td>${esc(a.website_url)}</td><td>${esc(a.email||'')}</td><td><select class="mini" onchange="auStatus('${a.id}',this.value)">${['requested','reviewed','sent'].map(s=>`<option ${opt(a.status,s)}>${s}</option>`).join('')}</select></td><td><button class="icon-btn danger" onclick="delRow('website_audits','${a.id}',vGrowth)">Delete</button></td></tr>`).join(''):'<tr><td colspan="4" class="muted">None yet.</td></tr>'}</tbody></table></div></div>
+ <div class="panel"><h3>Referrals (${rf.length})</h3>${rf.length?rf.map(r=>`<div style="padding:.4rem 0">${esc(r.referred_name||'')} ${badge(r.status)}</div>`).join(''):'<p class="muted">None yet.</p>'}</div>
+ <div class="panel"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Newsletter (${ns.length})</h3>${ns.length?`<button class="btn btn-ghost btn-sm" onclick='exportCsv(${JSON.stringify(JSON.stringify(ns.map(x=>x.email)))})'>Export CSV</button>`:''}</div></div>`);
+}
+window.auStatus=async(id,status)=>{await db.from('website_audits').update({status}).eq('id',id);toast('Updated');};
+window.exportCsv=(s)=>{const arr=JSON.parse(s);const blob=new Blob(['email\n'+arr.join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='subscribers.csv';a.click();};
+
+/* ----- ACCOUNT (change own password) ----- */
+async function vAccount(){
+ set(`<div class="panel" style="max-width:460px"><h3>Your account</h3><p class="note" style="margin-bottom:1rem">${esc(P.email)} · ${esc(P.role)}</p>
+ <div id="am"></div>
+ <div class="field"><label>New password</label><input id="np" type="password" placeholder="At least 8 characters"></div>
+ <div class="field"><label>Confirm</label><input id="np2" type="password"></div>
+ <button class="btn btn-primary" onclick="changePw()">Update password</button></div>`);
+}
+window.changePw=async()=>{const p1=document.getElementById('np').value,p2=document.getElementById('np2').value,am=document.getElementById('am');if(p1.length<8){am.innerHTML='<div class="alert alert-bad">At least 8 characters.</div>';return;}if(p1!==p2){am.innerHTML='<div class="alert alert-bad">Passwords do not match.</div>';return;}const{error}=await db.auth.updateUser({password:p1});if(error){am.innerHTML='<div class="alert alert-bad">'+esc(error.message)+'</div>';return;}am.innerHTML='<div class="alert alert-ok">Password updated.</div>';document.getElementById('np').value='';document.getElementById('np2').value='';};
+
+/* ---------- router ---------- */
+function router(){const v=(location.hash.slice(1)||'dashboard');document.querySelectorAll('.dash-side a[data-v]').forEach(a=>a.classList.toggle('active',a.dataset.v===v));document.getElementById('vtitle').textContent=({dashboard:'Dashboard',content:'Content',leads:'Leads',messages:'Messages',clients:'Clients',projects:'Projects',invoices:'Invoices',support:'Support',growth:'Growth',account:'Account'})[v]||'Dashboard';set('<div class="panel"><p class="muted">Loading...</p></div>');(VIEWS[v]||vDash)().catch(e=>set('<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>'));}
+window.addEventListener('hashchange',router);
+(async()=>{P=await requireRole('staff');if(!P)return;document.getElementById('who').textContent=(P.full_name||P.email)+' ('+P.role+')';router();})();
 </script></body></html>

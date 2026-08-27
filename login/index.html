@@ -1,42 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Client Login - BlueWave Digital</title>
-<meta name="description" content="Log in to your BlueWave client portal."/>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login - BlueWave Digital</title>
 <link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="/assets/style.css"/>
-</head>
-<body>
-<div id="nav"></div>
-<section class="page-head" style="min-height:70vh;display:flex;align-items:center"><div class="wrap">
+<link rel="stylesheet" href="/assets/style.css"/></head><body><div id="nav"></div>
+<section class="page-head" style="min-height:78vh;display:flex;align-items:center"><div class="wrap">
 <div class="form-box reveal" style="max-width:420px">
 <div class="center" style="margin-bottom:1.5rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png" style="height:48px"><h1 style="font-size:1.5rem;margin-top:.8rem">Welcome back</h1><p class="note">Log in to your BlueWave account.</p></div>
 <div id="msg"></div>
-<div class="field"><label>Email</label><input id="email" type="email" placeholder="you@example.com"></div>
-<div class="field"><label>Password</label><input id="password" type="password" placeholder="Your password"></div>
-<button class="btn btn-primary btn-block" id="login">Log in</button>
-<p class="note center" style="margin-top:1rem">New clients receive a login by invitation. Need help? <a href="/contact/" style="color:var(--bright)">Contact us</a>.</p>
+<div id="loginView">
+  <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@example.com"></div>
+  <div class="field"><label>Password</label><input id="password" type="password" placeholder="Your password"></div>
+  <button class="btn btn-primary btn-block" id="login">Log in</button>
+  <p class="note center" style="margin-top:1rem"><a href="#" id="toForgot" style="color:var(--bright)">Forgot your password?</a></p>
+  <p class="note center" style="margin-top:.4rem">New clients receive a login by invitation.</p>
+</div>
+<div id="forgotView" style="display:none">
+  <p class="note" style="margin-bottom:1rem">Enter your email and we'll send a link to set a new password. Works for clients, staff and admins.</p>
+  <div class="field"><label>Email</label><input id="femail" type="email" placeholder="you@example.com"></div>
+  <button class="btn btn-primary btn-block" id="sendReset">Send reset link</button>
+  <p class="note center" style="margin-top:1rem"><a href="#" id="toLogin" style="color:var(--bright)">Back to login</a></p>
+</div>
 </div></div></section>
+<div id="footer"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
+const msg=document.getElementById('msg');
+const show=(v)=>{document.getElementById('loginView').style.display=v==='login'?'block':'none';document.getElementById('forgotView').style.display=v==='forgot'?'block':'none';msg.innerHTML='';};
+document.getElementById('toForgot').onclick=e=>{e.preventDefault();show('forgot');};
+document.getElementById('toLogin').onclick=e=>{e.preventDefault();show('login');};
 document.getElementById('login').onclick=async()=>{
-  const email=document.getElementById('email').value.trim();
-  const password=document.getElementById('password').value;
-  const msg=document.getElementById('msg');
+  const email=document.getElementById('email').value.trim();const password=document.getElementById('password').value;
   if(!email||!password){msg.innerHTML='<div class="alert alert-bad">Enter your email and password.</div>';return;}
   const{error}=await signIn(email,password);
   if(error){msg.innerHTML='<div class="alert alert-bad">'+esc(error.message)+'</div>';return;}
-  const p=await currentProfile();
-  if(p&&(p.role==='admin'||p.role==='staff'))location.href='/admin/';
-  else location.href='/portal/';
+  const p=await currentProfile();location.href=(p&&(p.role==='admin'||p.role==='staff'))?'/admin/':'/portal/';
 };
-// if already logged in, redirect
-currentProfile().then(p=>{if(p){location.href=(p.role==='admin'||p.role==='staff')?'/admin/':'/portal/';}});
-</script>
-</body></html>
+document.getElementById('sendReset').onclick=async()=>{
+  const email=document.getElementById('femail').value.trim();
+  if(!email){msg.innerHTML='<div class="alert alert-bad">Enter your email.</div>';return;}
+  const{error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/set-password/'});
+  if(error){msg.innerHTML='<div class="alert alert-bad">'+esc(error.message)+'</div>';return;}
+  msg.innerHTML='<div class="alert alert-ok">Check your email for a link to set a new password.</div>';
+};
+currentProfile().then(p=>{if(p)location.href=(p.role==='admin'||p.role==='staff')?'/admin/':'/portal/';});
+</script></body></html>

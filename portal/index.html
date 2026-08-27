@@ -1,35 +1,81 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Client Portal - BlueWave</title>
+<title>Client Portal - BlueWave Digital</title>
 <link rel="icon" type="image/png" href="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/style.css"/></head><body>
-<div class="dash"><aside class="dash-side">
+<div class="dash">
+<aside class="dash-side">
 <a class="brand" href="/" style="margin-bottom:1.4rem"><img src="https://i.ibb.co/MDHS2J5v/Blue-Wave-Digital-New-Logo.png"/><span>BlueWave</span></a>
-<a href="/portal/" class="active">Dashboard</a><a href="/portal/projects/" class="">Projects</a><a href="/portal/invoices/" class="">Invoices</a><a href="/portal/files/" class="">Files</a><a href="/portal/approvals/" class="">Approvals</a><a href="/portal/support/" class="">Support</a><a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a></aside>
-<main class="dash-main"><div class="dash-top"><h1>Dashboard</h1><div id="who" class="note"></div></div>
-<div id="content"><div class="panel"><p class="muted">Loading...</p></div></div></main></div>
+<a href="#dashboard" data-v="dashboard">Dashboard</a>
+<a href="#projects" data-v="projects">Projects</a>
+<a href="#invoices" data-v="invoices">Invoices</a>
+<a href="#files" data-v="files">Files</a>
+<a href="#approvals" data-v="approvals">Approvals</a>
+<a href="#support" data-v="support">Support</a>
+<a href="#account" data-v="account">Account</a>
+<a href="#" onclick="signOut();return false;" style="margin-top:1rem;color:var(--bad)">Log out</a>
+</aside>
+<main class="dash-main">
+<div class="dash-top"><h1 id="vtitle">Dashboard</h1><div id="who" class="note"></div></div>
+<div id="view"><div class="panel"><p class="muted">Loading...</p></div></div>
+</main></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/app.js"></script>
 <script>
-(async()=>{
-try{
-const P=await requireRole('client');if(!P)return;document.getElementById('who').textContent=P.full_name||P.email;
-const cid=P.client_id;
-if(!cid){document.getElementById('content').innerHTML='<div class="panel">Your account is not linked to a client profile yet. Please contact BlueWave.</div>';return;}
-const projects=(await db.from('projects').select('*').eq('client_id',cid)).data||[];
-const invoices=(await db.from('invoices').select('*').eq('client_id',cid)).data||[];
-const tickets=(await db.from('support_tickets').select('*').eq('client_id',cid).neq('status','closed')).data||[];
-const approvals=(await db.from('approvals').select('id,status,project_id, projects!inner(client_id)').eq('projects.client_id',cid).eq('status','awaiting')).data||[];
-document.getElementById('content').innerHTML=`
-<div class="stat-grid">
-<div class="stat"><div class="n">${projects.length}</div><div class="l">Projects</div></div>
-<div class="stat"><div class="n">${invoices.filter(i=>i.status!=='paid').length}</div><div class="l">Unpaid invoices</div></div>
-<div class="stat"><div class="n">${approvals.length}</div><div class="l">Awaiting approval</div></div>
-<div class="stat"><div class="n">${tickets.length}</div><div class="l">Open tickets</div></div></div>
-<div class="panel"><h3>Your projects</h3>${projects.length?projects.map(p=>`<div style="padding:.6rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(p.name)}</b> <span class="badge badge-new">${esc(p.status)}</span><div style="height:6px;background:rgba(255,255,255,.08);border-radius:4px;margin-top:.5rem"><div style="height:6px;width:${p.progress||0}%;background:linear-gradient(90deg,var(--bright),var(--wave));border-radius:4px"></div></div></div>`).join(''):'<p class="muted">No projects yet.</p>'}</div>
-<div class="panel"><h3>Quick links</h3><a class="btn btn-ghost btn-sm" href="/portal/invoices/">Invoices</a> <a class="btn btn-ghost btn-sm" href="/portal/approvals/">Approvals</a> <a class="btn btn-ghost btn-sm" href="/portal/support/">Get support</a></div>`;
-}catch(e){document.getElementById('content').innerHTML='<div class="panel alert alert-bad">Error loading dashboard: '+esc(e.message)+'</div>';}
-})();
+let P=null,CID=null;
+const V=document.getElementById('view');const set=h=>{V.innerHTML=h;};
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2200);}
+function badge(s){const m={paid:'badge-ok',overdue:'badge-bad',sent:'badge-warn',draft:'badge-new',awaiting:'badge-new',approved:'badge-ok',changes_requested:'badge-warn',open:'badge-warn',resolved:'badge-ok',closed:'badge-ok'};return `<span class="badge ${m[s]||'badge-new'}">${esc(s)}</span>`;}
+
+const VIEWS={dashboard:vDash,projects:vProjects,invoices:vInvoices,files:vFiles,approvals:vApprovals,support:vSupport,account:vAccount};
+
+async function vDash(){
+ const projects=(await db.from('projects').select('*').eq('client_id',CID)).data||[];
+ const invoices=(await db.from('invoices').select('*').eq('client_id',CID)).data||[];
+ const tickets=(await db.from('support_tickets').select('*').eq('client_id',CID).neq('status','closed')).data||[];
+ const ap=(await db.from('approvals').select('id, projects!inner(client_id)').eq('projects.client_id',CID).eq('status','awaiting')).data||[];
+ set(`<div class="stat-grid">
+ <div class="stat"><div class="n">${projects.length}</div><div class="l">Projects</div></div>
+ <div class="stat"><div class="n">${invoices.filter(i=>i.status!=='paid').length}</div><div class="l">Unpaid invoices</div></div>
+ <div class="stat"><div class="n">${ap.length}</div><div class="l">Awaiting approval</div></div>
+ <div class="stat"><div class="n">${tickets.length}</div><div class="l">Open tickets</div></div></div>
+ <div class="panel"><h3>Your projects</h3>${projects.length?projects.map(p=>`<div style="padding:.6rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(p.name)}</b> ${badge(p.status)}<div style="height:6px;background:rgba(255,255,255,.08);border-radius:4px;margin-top:.5rem"><div style="height:6px;width:${p.progress||0}%;background:linear-gradient(90deg,var(--bright),var(--wave));border-radius:4px"></div></div></div>`).join(''):'<p class="muted">No projects yet.</p>'}</div>`);
+}
+async function vProjects(){
+ const pr=(await db.from('projects').select('*').eq('client_id',CID).order('created_at')).data||[];let h='';
+ for(const p of pr){const ms=(await db.from('project_milestones').select('*').eq('project_id',p.id).order('sort_order')).data||[];const up=(await db.from('project_updates').select('*').eq('project_id',p.id).order('created_at',{ascending:false})).data||[];
+  h+=`<div class="panel"><h3>${esc(p.name)} ${badge(p.status)}</h3><p class="muted">${esc(p.description||'')}</p><div style="height:8px;background:rgba(255,255,255,.08);border-radius:4px;margin:1rem 0"><div style="height:8px;width:${p.progress||0}%;background:linear-gradient(90deg,var(--bright),var(--wave));border-radius:4px"></div></div>${ms.map(m=>`<div style="padding:.35rem 0">${m.status==='done'?'&#10003;':'&#9675;'} ${esc(m.title)} <span class="note">${m.due_date||''}</span></div>`).join('')}${up.length?'<h4 style="margin-top:1rem;font-size:.95rem">Updates</h4>'+up.map(u=>`<div class="note" style="padding:.3rem 0">${esc(u.body)}</div>`).join(''):''}</div>`;}
+ set(h||'<div class="panel"><p class="muted">No projects yet.</p></div>');
+}
+async function vInvoices(){
+ const inv=(await db.from('invoices').select('*').eq('client_id',CID).order('issue_date',{ascending:false})).data||[];
+ set(`<div class="panel"><h3>Your invoices</h3>${inv.length?`<div class="table-wrap"><table class="data"><thead><tr><th>Number</th><th>Issued</th><th>Due</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>${inv.map(i=>`<tr><td>${esc(i.number||'-')}</td><td>${i.issue_date||''}</td><td>${i.due_date||''}</td><td>${money(i.total,i.currency)}</td><td>${badge(i.status)}</td><td><button class="icon-btn" onclick="dl('${i.id}')">Download</button></td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">No invoices yet.</p>'}</div>`);
+ window._inv=inv;
+}
+window.dl=async(id)=>{const i=(window._inv||[]).find(x=>x.id===id);const items=(await db.from('invoice_line_items').select('*').eq('invoice_id',id).order('sort_order')).data||[];let t=`BLUEWAVE DIGITAL - INVOICE\n${'='.repeat(40)}\nInvoice: ${i.number}\nIssued: ${i.issue_date||''}\nDue: ${i.due_date||''}\nStatus: ${i.status}\n\nITEMS\n${'-'.repeat(40)}\n`;items.forEach(it=>{t+=`${it.description}  x${it.quantity}  ${money(it.amount,i.currency)}\n`;});t+=`${'-'.repeat(40)}\nTOTAL: ${money(i.total,i.currency)}\n\nThank you for your business.\nBlueWave Digital - bluewaveagency.online`;const b=new Blob([t],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(i.number||'invoice')+'.txt';a.click();};
+async function vFiles(){
+ const files=(await db.from('files').select('*').eq('client_id',CID).order('created_at',{ascending:false})).data||[];
+ set(`<div class="panel"><h3>Project files</h3>${files.length?files.map(f=>`<div style="display:flex;justify-content:space-between;padding:.6rem 0;border-bottom:1px solid var(--card-line)"><span>${esc(f.name)} <span class="note">(${esc(f.direction)})</span></span><a class="icon-btn" href="${esc(f.url)}" target="_blank">Open</a></div>`).join(''):'<p class="muted">No files shared yet.</p>'}</div>`);
+}
+async function vApprovals(){
+ async function load(){const ap=(await db.from('approvals').select('*, projects!inner(client_id)').eq('projects.client_id',CID).order('created_at')).data||[];
+  set(`<div class="panel"><h3>Approvals</h3>${ap.length?ap.map(a=>`<div style="padding:.9rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(a.title)}</b> ${badge(a.status)}<p class="muted">${esc(a.description||'')}</p>${a.status==='awaiting'?`<button class="btn btn-primary btn-sm" onclick="resp('${a.id}','approved')">Approve</button> <button class="icon-btn" onclick="resp('${a.id}','changes_requested')">Request changes</button>`:''}</div>`).join(''):'<p class="muted">Nothing waiting for approval.</p>'}</div>`);}
+ window.resp=async(id,s)=>{await db.from('approvals').update({status:s,responded_at:new Date().toISOString()}).eq('id',id);toast('Done');load();};load();
+}
+async function vSupport(){
+ async function load(){const ts=(await db.from('support_tickets').select('*').eq('client_id',CID).order('created_at',{ascending:false})).data||[];
+  set(`<div class="panel"><h3>New request</h3><div class="field"><label>Subject</label><input id="subj"></div><div class="field"><label>Category</label><select id="cat"><option>issue</option><option>change</option><option>maintenance</option><option>emergency</option></select></div><div class="field"><label>Details</label><textarea id="body"></textarea></div><button class="btn btn-primary" id="sub">Submit</button></div><div class="panel"><h3>Your requests</h3>${ts.length?ts.map(t=>`<div style="padding:.6rem 0;border-bottom:1px solid var(--card-line)"><b>${esc(t.subject)}</b> ${badge(t.status)} <span class="note">${esc(t.category||'')}</span></div>`).join(''):'<p class="muted">No requests yet.</p>'}</div>`);
+  document.getElementById('sub').onclick=async()=>{const subject=document.getElementById('subj').value.trim();const category=document.getElementById('cat').value;const bd=document.getElementById('body').value.trim();if(!subject){toast('Add a subject');return;}const{data:tk,error}=await db.from('support_tickets').insert({client_id:CID,subject,category,created_by:P.id}).select().single();if(error){toast(error.message);return;}if(bd&&tk)await db.from('ticket_messages').insert({ticket_id:tk.id,author_id:P.id,body:bd});toast('Submitted');load();};}
+ load();
+}
+async function vAccount(){
+ set(`<div class="panel" style="max-width:460px"><h3>Your account</h3><p class="note" style="margin-bottom:1rem">${esc(P.email)}</p><div id="am"></div><div class="field"><label>New password</label><input id="np" type="password"></div><div class="field"><label>Confirm</label><input id="np2" type="password"></div><button class="btn btn-primary" onclick="chpw()">Update password</button></div>`);
+}
+window.chpw=async()=>{const p1=document.getElementById('np').value,p2=document.getElementById('np2').value,am=document.getElementById('am');if(p1.length<8){am.innerHTML='<div class="alert alert-bad">At least 8 characters.</div>';return;}if(p1!==p2){am.innerHTML='<div class="alert alert-bad">Passwords do not match.</div>';return;}const{error}=await db.auth.updateUser({password:p1});if(error){am.innerHTML='<div class="alert alert-bad">'+esc(error.message)+'</div>';return;}am.innerHTML='<div class="alert alert-ok">Password updated.</div>';};
+
+function router(){const v=location.hash.slice(1)||'dashboard';document.querySelectorAll('.dash-side a[data-v]').forEach(a=>a.classList.toggle('active',a.dataset.v===v));document.getElementById('vtitle').textContent=({dashboard:'Dashboard',projects:'Projects',invoices:'Invoices',files:'Files',approvals:'Approvals',support:'Support',account:'Account'})[v]||'Dashboard';set('<div class="panel"><p class="muted">Loading...</p></div>');(VIEWS[v]||vDash)().catch(e=>set('<div class="panel alert alert-bad">Error: '+esc(e.message)+'</div>'));}
+window.addEventListener('hashchange',router);
+(async()=>{P=await requireRole('client');if(!P)return;CID=P.client_id;document.getElementById('who').textContent=P.full_name||P.email;if(!CID){set('<div class="panel">Your account is not linked to a client profile yet. Please contact BlueWave.</div>');return;}router();})();
 </script></body></html>
